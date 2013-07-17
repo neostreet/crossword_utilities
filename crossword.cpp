@@ -112,12 +112,58 @@ const int CrossWord::get_num_letters() const
   return _num_letters;
 }
 
+void CrossWord::set_solution(char *solution,int num_letters)
+{
+  int n;
+
+  for (n = 0; n < num_letters; n++)
+    _solution[n] = solution[n];
+}
+
+const char* CrossWord::get_solution() const
+{
+  return _solution;
+}
+
+void CrossWord::initialize_grid()
+{
+  int m;
+  int n;
+
+  for (n = 0; n < _total_squares; n++)
+    _grid[n] = ' ';
+
+  for (n = 0; n < _num_black_space_structs; n++) {
+    for (m = 0; m < _black_space_structs[n].len; m++) {
+      _grid[_black_space_structs[n].offset + m] = 'X';
+      _grid[_total_squares - 1 - _black_space_structs[n].offset - m] = 'X';
+    }
+  }
+}
+
 void CrossWord::print(ostream& out) const
 {
+  int m;
+  int n;
+  int p;
+  char row[MAX_WIDTH+1];
+
   out << "_width = " << _width << endl;
   out << "_total_squares = " << _total_squares << endl;
   out << "_num_black_space_structs = " << _num_black_space_structs << endl;
   out << "_num_letters = " << _num_letters << endl;
+
+  p = 0;
+
+  row[_width] = 0;
+
+  for (n = 0; n < _width; n++) {
+    for (m = 0; m < _width; m++) {
+      row[m] = _grid[p++];
+    }
+
+    cout << row << endl;
+  }
 }
 
 ostream& operator<<(ostream& out,const CrossWord& crossword)

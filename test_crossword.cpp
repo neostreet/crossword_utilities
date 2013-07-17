@@ -11,12 +11,31 @@ static struct offset_len black_space_structs[] = {
 };
 #define NUM_BLACK_SPACE_STRUCTS (sizeof black_space_structs / sizeof (struct offset_len))
 
+static char *solution =
+  "FATE" "AWASH" "AWOL"
+  "LIES" "CURIO" "SHOE"
+  "ELECTORATE" "SIZE"
+  "ASS" "ERST" "DIETED"
+  "CENT" "HOSTESS"
+  "REFITS" "JEWISH"
+  "ARITH" "KERNS" "OAF"
+  "NILE" "ANNES" "DUPE"
+  "DEI" "OVENS" "LOSER"
+  "BODILY" "RACERS"
+  "GLUTEAL" "PEPS"
+  "RESIST" "SLUE" "SKI"
+  "OTTO" "REPUBLICAN"
+  "OMES" "IRATE" "RAMS"
+  "MERE" "XENON" "ABET";
+
 int main(int argc,char **argv)
 {
   CrossWord crossword;
 
   crossword.set_width(15);
   crossword.set_black_space_structs(black_space_structs,NUM_BLACK_SPACE_STRUCTS);
+  crossword.initialize_grid();
+  crossword.set_solution(solution,strlen(solution));
 
   cout << crossword;
 

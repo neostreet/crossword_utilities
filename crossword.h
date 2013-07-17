@@ -3,7 +3,10 @@ struct offset_len {
   int len;
 };
 
-#define MAX_BLACK_SPACE_STRUCTS 100
+#define MAX_BLACK_SPACE_STRUCTS 200
+
+#define MAX_WIDTH 25
+#define MAX_GRID_SIZE (MAX_WIDTH * MAX_WIDTH)
 
 class CrossWord {
   public:
@@ -29,6 +32,11 @@ class CrossWord {
 
   const int get_num_letters() const;
 
+  void set_solution(char *solution,int num_letters);
+  const char* get_solution() const;
+
+  void initialize_grid();
+
   void print(ostream& out) const;
 
   private:
@@ -36,8 +44,10 @@ class CrossWord {
   int _width;
   int _total_squares;
   int _num_black_space_structs;
-  int _num_letters;
   struct offset_len _black_space_structs[MAX_BLACK_SPACE_STRUCTS];
+  int _num_letters;
+  char _grid[MAX_GRID_SIZE];
+  char _solution[MAX_GRID_SIZE];
 };
 
 ostream& operator<<(ostream& out,const CrossWord& crossword);
