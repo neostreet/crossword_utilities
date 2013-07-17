@@ -129,16 +129,36 @@ void CrossWord::initialize_grid()
 {
   int m;
   int n;
+  int p;
+  int q;
+  int midpoint;
 
-  for (n = 0; n < _total_squares; n++)
-    _grid[n] = ' ';
+  midpoint = _total_squares / 2;
+
+  p = 0;
+  q = 0;
 
   for (n = 0; n < _num_black_space_structs; n++) {
-    for (m = 0; m < _black_space_structs[n].len; m++) {
-      _grid[_black_space_structs[n].offset + m] = 'X';
-      _grid[_total_squares - 1 - _black_space_structs[n].offset - m] = 'X';
+    for ( ; p < _black_space_structs[n].offset; p++,q++) {
+      _grid[p] = _solution[q];
+      _grid[_total_squares - 1 - p] = _solution[_num_letters - 1 - q];
     }
+
+    for (m = 0; m < _black_space_structs[n].len; m++) {
+      _grid[_black_space_structs[n].offset + m] = ' ';
+      _grid[_total_squares - 1 - _black_space_structs[n].offset - m] = ' ';
+    }
+
+    p += _black_space_structs[n].len;
   }
+
+  for ( ; p < midpoint; p++,q++) {
+    _grid[p] = _solution[q];
+    _grid[_total_squares - 1 - p] = _solution[_num_letters - 1 - q];
+  }
+
+  if (_total_squares % 2)
+    _grid[p] = _solution[q];
 }
 
 void CrossWord::print(ostream& out) const

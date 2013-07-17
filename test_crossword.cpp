@@ -34,8 +34,8 @@ int main(int argc,char **argv)
 
   crossword.set_width(15);
   crossword.set_black_space_structs(black_space_structs,NUM_BLACK_SPACE_STRUCTS);
-  crossword.initialize_grid();
   crossword.set_solution(solution,strlen(solution));
+  crossword.initialize_grid();
 
   cout << crossword;
 
