@@ -13,6 +13,8 @@ CrossWord::CrossWord()
   _total_squares = 0;
   _num_black_space_structs = 0;
   _num_letters = 0;
+  _num_across_words = 0;
+  _num_down_words = 0;
 }
 
 // copy constructor
@@ -29,6 +31,8 @@ CrossWord::CrossWord(const CrossWord& crossword)
     _black_space_structs[n] = crossword._black_space_structs[n];
 
   _num_letters = crossword._num_letters;
+  _num_across_words = crossword._num_across_words;
+  _num_down_words = crossword._num_down_words;
 }
 
 // assignment operator
@@ -46,6 +50,8 @@ CrossWord& CrossWord::operator=(const CrossWord& crossword)
     _black_space_structs[n] = crossword._black_space_structs[n];
 
   _num_letters = crossword._num_letters;
+  _num_across_words = crossword._num_across_words;
+  _num_down_words = crossword._num_down_words;
 
   return *this;
 }
@@ -133,6 +139,9 @@ void CrossWord::initialize_grid()
   int q;
   int midpoint;
 
+  // copy the solution letters to the correct spots in the grid;
+  // initialize black squares in the grid to zero
+
   midpoint = _total_squares / 2;
 
   p = 0;
@@ -145,20 +154,64 @@ void CrossWord::initialize_grid()
     }
 
     for (m = 0; m < _black_space_structs[n].len; m++) {
-      _grid[_black_space_structs[n].offset + m] = ' ';
-      _grid[_total_squares - 1 - _black_space_structs[n].offset - m] = ' ';
+      _grid[_black_space_structs[n].offset + m] = 0;
+      _grid[_total_squares - 1 - _black_space_structs[n].offset - m] = 0;
     }
 
     p += _black_space_structs[n].len;
   }
+
+  // if there is a word which spans the middle of the grid, fill it in
 
   for ( ; p < midpoint; p++,q++) {
     _grid[p] = _solution[q];
     _grid[_total_squares - 1 - p] = _solution[_num_letters - 1 - q];
   }
 
-  if (_total_squares % 2)
-    _grid[p] = _solution[q];
+  // if there's an odd number of squares in the grid, and the middle square
+  // is not a black square, fill it in
+
+  if (_total_squares % 2) {
+    if (_black_space_structs[_num_black_space_structs - 1].offset +
+      _black_space_structs[_num_black_space_structs - 1].len - 1 != midpoint) {
+      _grid[p] = _solution[q];
+    }
+  }
+
+  // calculate the number of across words in the grid
+
+  p = 0;
+  _num_across_words = 0;
+
+  for (n = 0; n < _width; n++) {
+    for (m = 0; m < _width; m++) {
+      if (_grid[p] && (!m || !_grid[p-1]))
+        _num_across_words++;
+
+      p++;
+    }
+  }
+
+  // calculate the number of down words in the grid
+
+  _num_down_words = 0;
+
+  for (n = 0; n < _width; n++) {
+    for (m = 0; m < _width; m++) {
+      if (_grid[n + m * _width] && (!m || !_grid[n + (m - 1) * _width]))
+        _num_down_words++;
+    }
+  }
+}
+
+const int CrossWord::get_num_across_words() const
+{
+  return _num_across_words;
+}
+
+const int CrossWord::get_num_down_words() const
+{
+  return _num_down_words;
 }
 
 void CrossWord::print(ostream& out) const
@@ -172,6 +225,8 @@ void CrossWord::print(ostream& out) const
   out << "_total_squares = " << _total_squares << endl;
   out << "_num_black_space_structs = " << _num_black_space_structs << endl;
   out << "_num_letters = " << _num_letters << endl;
+  out << "_num_across_words = " << _num_across_words << endl;
+  out << "_num_down_words = " << _num_down_words << endl;
 
   p = 0;
 
@@ -179,7 +234,12 @@ void CrossWord::print(ostream& out) const
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
-      row[m] = _grid[p++];
+      if (_grid[p])
+        row[m] = _grid[p++];
+      else {
+        row[m] = ' ';
+        p++;
+      }
     }
 
     cout << row << endl;
