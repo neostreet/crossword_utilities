@@ -35,6 +35,7 @@ class CrossWord {
   void set_solution(char *solution,int num_letters);
   const char* get_solution() const;
 
+  char* get_grid();
   void initialize_grid();
 
   const int get_num_across_words() const;

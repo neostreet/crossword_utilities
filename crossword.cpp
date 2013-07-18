@@ -131,6 +131,11 @@ const char* CrossWord::get_solution() const
   return _solution;
 }
 
+char* CrossWord::get_grid()
+{
+  return &_grid[0];
+}
+
 void CrossWord::initialize_grid()
 {
   int m;

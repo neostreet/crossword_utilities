@@ -5,39 +5,90 @@ using namespace std;
 
 #include "crossword.h"
 
-static struct offset_len black_space_structs[] = {
-  {4, 1}, {10, 1}, {19, 1}, {25, 1}, {40, 1}, {48, 1}, {53, 1},
-  {60, 3}, {67, 1}, {81, 1}, {88,2}, {95,1}, {101, 1}, {109,1}
-};
-#define NUM_BLACK_SPACE_STRUCTS (sizeof black_space_structs / sizeof (struct offset_len))
+#define MAX_LINE_LEN 8192
+char line[MAX_LINE_LEN];
 
-static char *solution =
-  "FATE" "AWASH" "AWOL"
-  "LIES" "CURIO" "SHOE"
-  "ELECTORATE" "SIZE"
-  "ASS" "ERST" "DIETED"
-  "CENT" "HOSTESS"
-  "REFITS" "JEWISH"
-  "ARITH" "KERNS" "OAF"
-  "NILE" "ANNES" "DUPE"
-  "DEI" "OVENS" "LOSER"
-  "BODILY" "RACERS"
-  "GLUTEAL" "PEPS"
-  "RESIST" "SLUE" "SKI"
-  "OTTO" "REPUBLICAN"
-  "OMES" "IRATE" "RAMS"
-  "MERE" "XENON" "ABET";
+static char usage[] = "usage: test_crossword filename\n";
+static char couldnt_open[] = "couldn't open %s\n";
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  FILE *fptr;
+  int linelen;
+  int line_no;
+  int width;
   CrossWord crossword;
+  char *grid;
 
-  crossword.set_width(15);
-  crossword.set_black_space_structs(black_space_structs,NUM_BLACK_SPACE_STRUCTS);
-  crossword.set_solution(solution,strlen(solution));
-  crossword.initialize_grid();
+  if (argc != 2) {
+    printf(usage);
+    return 1;
+  }
+
+  if ((fptr = fopen(argv[1],"r")) == NULL) {
+    printf(couldnt_open,argv[1]);
+    return 2;
+  }
+
+  grid = crossword.get_grid();
+
+  line_no = 0;
+
+  for ( ; ; ) {
+    GetLine(fptr,line,&linelen,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    if (!line_no)
+      sscanf(line,"%d",&width);
+    else {
+      if (line_no > width + 1)
+        break;
+
+      if (linelen != width) {
+        printf("line %d has a length of %d when it should have a length of %d\n",
+          line_no,linelen,width);
+        return 3;
+      }
+
+      memcpy(&grid[(line_no - 1) * width],line,width);
+    }
+
+    line_no++;
+  }
+
+  fclose(fptr);
+
+  crossword.set_width(width);
 
   cout << crossword;
 
   return 0;
+}
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+{
+  int chara;
+  int local_line_len;
+
+  local_line_len = 0;
+
+  for ( ; ; ) {
+    chara = fgetc(fptr);
+
+    if (feof(fptr))
+      break;
+
+    if (chara == '\n')
+      break;
+
+    if (local_line_len < maxllen - 1)
+      line[local_line_len++] = (char)chara;
+  }
+
+  line[local_line_len] = 0;
+  *line_len = local_line_len;
 }
