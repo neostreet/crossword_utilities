@@ -48,7 +48,11 @@ int main(int argc,char **argv)
       if (line_no > width + 1)
         break;
 
-      if (linelen != width) {
+      if (linelen < width) {
+        for ( ; linelen < width; linelen++)
+          line[linelen] = ' ';
+      }
+      else if (linelen > width) {
         printf("line %d has a length of %d when it should have a length of %d\n",
           line_no,linelen,width);
         return 3;
@@ -63,6 +67,11 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   crossword.set_width(width);
+
+  if (!crossword.validate_grid()) {
+    printf("grid is invalid\n");
+    return 4;
+  }
 
   cout << crossword;
 
