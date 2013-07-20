@@ -20,11 +20,11 @@ class CrossWord {
 
   const int get_num_letters() const;
 
-  void set_solution(char *solution,int num_letters);
-  const char* get_solution() const;
-
   char* get_grid();
   bool validate_grid();
+
+  char* get_solution();
+  bool validate_solution();
 
   const int get_num_across_words() const;
   const int get_num_down_words() const;

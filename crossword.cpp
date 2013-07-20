@@ -77,19 +77,6 @@ const int CrossWord::get_num_letters() const
   return _num_letters;
 }
 
-void CrossWord::set_solution(char *solution,int num_letters)
-{
-  int n;
-
-  for (n = 0; n < num_letters; n++)
-    _solution[n] = solution[n];
-}
-
-const char* CrossWord::get_solution() const
-{
-  return _solution;
-}
-
 char* CrossWord::get_grid()
 {
   return &_grid[0];
@@ -126,6 +113,23 @@ bool CrossWord::validate_grid()
   return true;
 }
 
+char* CrossWord::get_solution()
+{
+  return _solution;
+}
+
+bool CrossWord::validate_solution()
+{
+  int n;
+
+  for (n = 0; n < _num_letters; n++) {
+    if ((_solution[n] < 'A') || (_solution[n] > 'Z'))
+      return false;
+  }
+
+  return true;
+}
+
 const int CrossWord::get_num_across_words() const
 {
   return _num_across_words;
@@ -141,6 +145,7 @@ void CrossWord::print(ostream& out) const
   int m;
   int n;
   int p;
+  int q;
   char row[MAX_WIDTH+1];
 
   out << "_width = " << _width << endl;
@@ -151,17 +156,16 @@ void CrossWord::print(ostream& out) const
   out << "_num_down_words = " << _num_down_words << endl;
 
   p = 0;
+  q = 0;
 
   row[_width] = 0;
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
-      if (_grid[p])
-        row[m] = _grid[p++];
-      else {
-        row[m] = ' ';
-        p++;
-      }
+      row[m] = _grid[p++];
+
+      if (row[m] == ' ')
+        row[m] = _solution[q++];
     }
 
     cout << row << endl;

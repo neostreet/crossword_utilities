@@ -15,12 +15,15 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int m;
+  int n;
   FILE *fptr;
   int linelen;
   int line_no;
   int width;
   CrossWord crossword;
   char *grid;
+  char *solution;
 
   if (argc != 2) {
     printf(usage);
@@ -45,9 +48,6 @@ int main(int argc,char **argv)
     if (!line_no)
       sscanf(line,"%d",&width);
     else {
-      if (line_no > width + 1)
-        break;
-
       if (linelen < width) {
         for ( ; linelen < width; linelen++)
           line[linelen] = ' ';
@@ -62,15 +62,45 @@ int main(int argc,char **argv)
     }
 
     line_no++;
-  }
 
-  fclose(fptr);
+    if (line_no == width + 1)
+      break;
+  }
 
   crossword.set_width(width);
 
   if (!crossword.validate_grid()) {
     printf("grid is invalid\n");
     return 4;
+  }
+
+  solution = crossword.get_solution();
+  m = 0;
+
+  for ( ; ; ) {
+    GetLine(fptr,line,&linelen,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    for (n = 0; n < linelen; n++) {
+      if (line[n] != ' ') {
+        if (m == MAX_GRID_SIZE) {
+          printf("MAX_GRID_SIZE of %d exceeded on line %d\n",
+            MAX_GRID_SIZE,line_no);
+          return 5;
+        }
+
+        solution[m++] = line[n];
+      }
+    }
+  }
+
+  fclose(fptr);
+
+  if (!crossword.validate_solution()) {
+    printf("solution is invalid\n");
+    return 6;
   }
 
   cout << crossword;
