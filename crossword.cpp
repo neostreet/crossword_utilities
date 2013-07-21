@@ -77,12 +77,12 @@ const int CrossWord::get_num_letters() const
   return _num_letters;
 }
 
-char* CrossWord::get_grid()
+char* CrossWord::get_solution()
 {
-  return &_grid[0];
+  return _solution;
 }
 
-bool CrossWord::validate_grid()
+bool CrossWord::validate_solution()
 {
   int m;
   int n;
@@ -92,19 +92,16 @@ bool CrossWord::validate_grid()
   num_letters = 0;
 
   for (n = 0; n < _midpoint; n++) {
-    if (_grid[n] == ' ')
+    if (_solution[n] != '.')
       num_letters++;
-    else if (_grid[n] != '.')
-      return false;
-
-    if (_grid[n] != _grid[_total_squares - 1 - n])
+    else if (_solution[_total_squares - 1 - n] != '.')
         return false;
   }
 
   num_letters *= 2;
 
   if (_total_squares % 2) {
-    if ((_grid[_midpoint] != ' ') && (_grid[_midpoint] != '.'))
+    if (_solution[_midpoint] == '.')
       return false;
 
     num_letters++;
@@ -112,27 +109,27 @@ bool CrossWord::validate_grid()
 
   _num_letters = num_letters;
 
-  // calculate the number of across words in the grid
+  // calculate the number of across words in the solution
 
   p = 0;
   _num_across_words = 0;
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
-      if ((_grid[p] != '.') && (!m || (_grid[p-1] == '.')))
+      if ((_solution[p] != '.') && (!m || (_solution[p-1] == '.')))
         _num_across_words++;
 
       p++;
     }
   }
 
-  // calculate the number of down words in the grid
+  // calculate the number of down words in the solution
 
   _num_down_words = 0;
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
-      if ((_grid[n + m * _width] != '.') && (!m || (_grid[n + (m - 1) * _width] == '.')))
+      if ((_solution[n + m * _width] != '.') && (!m || (_solution[n + (m - 1) * _width] == '.')))
         _num_down_words++;
     }
   }
@@ -140,17 +137,20 @@ bool CrossWord::validate_grid()
   return true;
 }
 
-char* CrossWord::get_solution()
+char* CrossWord::get_grid()
 {
-  return _solution;
+  return &_grid[0];
 }
 
-bool CrossWord::validate_solution()
+bool CrossWord::validate_grid()
 {
   int n;
 
-  for (n = 0; n < _num_letters; n++) {
-    if ((_solution[n] < 'A') || (_solution[n] > 'Z'))
+  for (n = 0; n < _total_squares; n++) {
+    if ((_grid[n] == '.') && (_solution[n] != '.'))
+      return false;
+
+    if ((_solution[n] == '.') && (_grid[n] != '.'))
       return false;
   }
 
@@ -172,7 +172,6 @@ void CrossWord::print(ostream& out) const
   int m;
   int n;
   int p;
-  int q;
   char row[MAX_WIDTH+1];
 
   out << "_width = " << _width << endl;
@@ -183,17 +182,12 @@ void CrossWord::print(ostream& out) const
   out << "_num_down_words = " << _num_down_words << endl;
 
   p = 0;
-  q = 0;
 
   row[_width] = 0;
 
   for (n = 0; n < _width; n++) {
-    for (m = 0; m < _width; m++) {
-      row[m] = _grid[p++];
-
-      if (row[m] == ' ')
-        row[m] = _solution[q++];
-    }
+    for (m = 0; m < _width; m++)
+      row[m] = _solution[p++];
 
     cout << row << endl;
   }

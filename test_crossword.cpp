@@ -35,7 +35,7 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  grid = crossword.get_grid();
+  solution = crossword.get_solution();
 
   line_no = 0;
 
@@ -45,20 +45,18 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    if (!line_no)
+    if (!line_no) {
       sscanf(line,"%d",&width);
+      crossword.set_width(width);
+    }
     else {
-      if (linelen < width) {
-        for ( ; linelen < width; linelen++)
-          line[linelen] = ' ';
-      }
-      else if (linelen > width) {
+      if (linelen != width) {
         printf("line %d has a length of %d when it should have a length of %d\n",
           line_no,linelen,width);
         return 3;
       }
 
-      memcpy(&grid[(line_no - 1) * width],line,width);
+      memcpy(&solution[(line_no - 1) * width],line,width);
     }
 
     line_no++;
@@ -67,14 +65,13 @@ int main(int argc,char **argv)
       break;
   }
 
-  crossword.set_width(width);
-
-  if (!crossword.validate_grid()) {
-    printf("grid is invalid\n");
+  if (!crossword.validate_solution()) {
+    printf("solution is invalid\n");
     return 4;
   }
 
-  solution = crossword.get_solution();
+  grid = crossword.get_grid();
+
   m = 0;
 
   for ( ; ; ) {
@@ -83,23 +80,29 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    for (n = 0; n < linelen; n++) {
-      if (line[n] != ' ') {
-        if (m == MAX_GRID_SIZE) {
-          printf("MAX_GRID_SIZE of %d exceeded on line %d\n",
-            MAX_GRID_SIZE,line_no);
-          return 5;
-        }
-
-        solution[m++] = line[n];
-      }
+    if (linelen < width) {
+      for ( ; linelen < width; linelen++)
+        line[linelen] = ' ';
     }
+    else if (linelen != width) {
+      printf("line %d has a length of %d when it should have a length of %d\n",
+        line_no,linelen,width);
+      return 5;
+    }
+
+    memcpy(&grid[m * width],line,width);
+
+    line_no++;
+    m++;
+
+    if (m == width)
+      break;
   }
 
   fclose(fptr);
 
-  if (!crossword.validate_solution()) {
-    printf("solution is invalid\n");
+  if (!crossword.validate_grid()) {
+    printf("grid is invalid\n");
     return 6;
   }
 

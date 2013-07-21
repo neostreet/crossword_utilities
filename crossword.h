@@ -1,5 +1,12 @@
 #define MAX_WIDTH 25
+#define MAX_ACROSS_WORDS 200
+#define MAX_DOWN_WORDS   200
 #define MAX_GRID_SIZE (MAX_WIDTH * MAX_WIDTH)
+
+struct offset_len {
+  int offset;
+  int len;
+};
 
 class CrossWord {
   public:
@@ -20,11 +27,11 @@ class CrossWord {
 
   const int get_num_letters() const;
 
-  char* get_grid();
-  bool validate_grid();
-
   char* get_solution();
   bool validate_solution();
+
+  char* get_grid();
+  bool validate_grid();
 
   const int get_num_across_words() const;
   const int get_num_down_words() const;
@@ -39,8 +46,12 @@ class CrossWord {
   int _num_letters;
   char _grid[MAX_GRID_SIZE];
   char _solution[MAX_GRID_SIZE];
+
   int _num_across_words;
+  struct offset_len across_words[MAX_ACROSS_WORDS];
+
   int _num_down_words;
+  struct offset_len down_words[MAX_DOWN_WORDS];
 };
 
 ostream& operator<<(ostream& out,const CrossWord& crossword);
