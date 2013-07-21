@@ -162,9 +162,19 @@ const int CrossWord::get_num_across_words() const
   return _num_across_words;
 }
 
+struct offset_len* CrossWord::get_across_words()
+{
+  return _across_words;
+}
+
 const int CrossWord::get_num_down_words() const
 {
   return _num_down_words;
+}
+
+struct offset_len* CrossWord::get_down_words()
+{
+  return _down_words;
 }
 
 void CrossWord::print(ostream& out) const

@@ -34,7 +34,10 @@ class CrossWord {
   bool validate_grid();
 
   const int get_num_across_words() const;
+  struct offset_len* get_across_words();
+
   const int get_num_down_words() const;
+  struct offset_len* get_down_words();
 
   void print(ostream& out) const;
 
@@ -48,10 +51,10 @@ class CrossWord {
   char _solution[MAX_GRID_SIZE];
 
   int _num_across_words;
-  struct offset_len across_words[MAX_ACROSS_WORDS];
+  struct offset_len _across_words[MAX_ACROSS_WORDS];
 
   int _num_down_words;
-  struct offset_len down_words[MAX_DOWN_WORDS];
+  struct offset_len _down_words[MAX_DOWN_WORDS];
 };
 
 ostream& operator<<(ostream& out,const CrossWord& crossword);
