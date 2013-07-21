@@ -84,7 +84,9 @@ char* CrossWord::get_grid()
 
 bool CrossWord::validate_grid()
 {
+  int m;
   int n;
+  int p;
   int num_letters;
 
   num_letters = 0;
@@ -109,6 +111,31 @@ bool CrossWord::validate_grid()
   }
 
   _num_letters = num_letters;
+
+  // calculate the number of across words in the grid
+
+  p = 0;
+  _num_across_words = 0;
+
+  for (n = 0; n < _width; n++) {
+    for (m = 0; m < _width; m++) {
+      if ((_grid[p] != '.') && (!m || (_grid[p-1] == '.')))
+        _num_across_words++;
+
+      p++;
+    }
+  }
+
+  // calculate the number of down words in the grid
+
+  _num_down_words = 0;
+
+  for (n = 0; n < _width; n++) {
+    for (m = 0; m < _width; m++) {
+      if ((_grid[n + m * _width] != '.') && (!m || (_grid[n + (m - 1) * _width] == '.')))
+        _num_down_words++;
+    }
+  }
 
   return true;
 }
