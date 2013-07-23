@@ -101,10 +101,8 @@ bool CrossWord::validate_solution()
   num_letters *= 2;
 
   if (_total_squares % 2) {
-    if (_solution[_midpoint] == '.')
-      return false;
-
-    num_letters++;
+    if (_solution[_midpoint] != '.')
+      num_letters++;
   }
 
   _num_letters = num_letters;
