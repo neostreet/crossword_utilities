@@ -8,13 +8,15 @@ using namespace std;
 #define MAX_LINE_LEN 8192
 char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: test_crossword filename\n";
+static char usage[] = "usage: test_crossword (-transpose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bTranspose;
   int m;
   int n;
   FILE *fptr;
@@ -25,14 +27,28 @@ int main(int argc,char **argv)
   char *grid;
   char *solution;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bTranspose = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-transpose"))
+      bTranspose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   solution = crossword.get_solution();
@@ -53,7 +69,7 @@ int main(int argc,char **argv)
       if (linelen != width) {
         printf("line %d has a length of %d when it should have a length of %d\n",
           line_no,linelen,width);
-        return 3;
+        return 4;
       }
 
       memcpy(&solution[(line_no - 1) * width],line,width);
@@ -67,7 +83,7 @@ int main(int argc,char **argv)
 
   if (!crossword.validate_solution()) {
     printf("solution is invalid\n");
-    return 4;
+    return 5;
   }
 
   grid = crossword.get_grid();
@@ -87,7 +103,7 @@ int main(int argc,char **argv)
     else if (linelen != width) {
       printf("line %d has a length of %d when it should have a length of %d\n",
         line_no,linelen,width);
-      return 5;
+      return 6;
     }
 
     memcpy(&grid[m * width],line,width);
@@ -103,8 +119,11 @@ int main(int argc,char **argv)
 
   if (!crossword.validate_grid()) {
     printf("grid is invalid\n");
-    return 6;
+    return 7;
   }
+
+  if (bTranspose)
+    crossword.transpose();
 
   cout << crossword;
 

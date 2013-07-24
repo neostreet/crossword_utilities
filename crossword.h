@@ -39,7 +39,9 @@ class CrossWord {
   const int get_num_down_words() const;
   struct offset_len* get_down_words();
 
-  void print(ostream& out) const;
+  void transpose();
+
+  void print(ostream& out);
 
   private:
 
@@ -57,4 +59,4 @@ class CrossWord {
   struct offset_len _down_words[MAX_DOWN_WORDS];
 };
 
-ostream& operator<<(ostream& out,const CrossWord& crossword);
+ostream& operator<<(ostream& out,CrossWord& crossword);

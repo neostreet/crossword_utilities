@@ -207,7 +207,47 @@ struct offset_len* CrossWord::get_down_words()
   return _down_words;
 }
 
-void CrossWord::print(ostream& out) const
+void CrossWord::transpose()
+{
+  int m;
+  int n;
+  int p;
+  char work[MAX_GRID_SIZE];
+
+  p = 0;
+
+  for (m = 0; m < _width; m++) {
+    for (n = 0; n < _width; n++)
+      work[_width * n + m] = _solution[p++];
+  }
+
+  p = 0;
+
+  for (m = 0; m < _width; m++) {
+    for (n = 0; n < _width; n++) {
+      _solution[p] = work[p];
+      p++;
+    }
+  }
+
+  p = 0;
+
+  for (m = 0; m < _width; m++) {
+    for (n = 0; n < _width; n++)
+      work[_width * n + m] = _grid[p++];
+  }
+
+  p = 0;
+
+  for (m = 0; m < _width; m++) {
+    for (n = 0; n < _width; n++) {
+      _grid[p] = work[p];
+      p++;
+    }
+  }
+}
+
+void CrossWord::print(ostream& out)
 {
   int m;
   int n;
@@ -225,37 +265,40 @@ void CrossWord::print(ostream& out) const
 
   row[_width] = 0;
 
-  for (n = 0; n < _width; n++) {
-    for (m = 0; m < _width; m++)
-      row[m] = _solution[p++];
+  for (m = 0; m < _width; m++) {
+    for (n = 0; n < _width; n++)
+      row[n] = _solution[p++];
 
     cout << row << endl;
   }
 
   cout << endl << "ACROSS" << endl << endl;
 
-  for (n = 0; n < _num_across_words; n++) {
-    for (m = 0; m < _across_words[n].len; m++)
-      row[m] = _solution[_across_words[n].offset + m];
+  for (m = 0; m < _num_across_words; m++) {
+    for (n = 0; n < _across_words[m].len; n++)
+      row[n] = _solution[_across_words[m].offset + n];
 
-    row[m] = 0;
+    row[n] = 0;
 
     cout << row << endl;
   }
 
   cout << endl << "DOWN" << endl << endl;
 
-  for (n = 0; n < _num_down_words; n++) {
-    for (m = 0; m < _down_words[n].len; m++)
-      row[m] = _solution[_down_words[n].offset + m * _width];
+  for (m = 0; m < _num_down_words; m++) {
+    for (n = 0; n < _down_words[m].len; n++)
+      row[n] = _solution[_down_words[m].offset + n * _width];
 
-    row[m] = 0;
+    row[n] = 0;
 
     cout << row << endl;
   }
+
+  validate_solution();
+  validate_grid();
 }
 
-ostream& operator<<(ostream& out,const CrossWord& crossword)
+ostream& operator<<(ostream& out,CrossWord& crossword)
 {
   crossword.print(out);
 
