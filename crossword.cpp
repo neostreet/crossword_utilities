@@ -98,6 +98,7 @@ bool CrossWord::validate_solution()
   int n;
   int p;
   int q;
+  int r;
   int num_letters;
 
   num_letters = 0;
@@ -119,10 +120,11 @@ bool CrossWord::validate_solution()
   _num_letters = num_letters;
 
   // calculate the number of across words in the solution, and
-  // initialize the across_words offset_len structures
+  // initialize _across_words and _across_words_histograms
 
   p = 0;
   _num_across_words = 0;
+  _num_across_words_histogram_values = 0;
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
@@ -137,6 +139,19 @@ bool CrossWord::validate_solution()
         _across_words[_num_across_words].len = q - p;
 
         _num_across_words++;
+
+        for (r = 0; r < _num_across_words_histogram_values; r++) {
+          if (_across_words_histogram[r].value == q - p)
+            break;
+        }
+
+        if (r == _num_across_words_histogram_values) {
+          _across_words_histogram[r].value = q - p;
+          _across_words_histogram[r].observations = 1;
+          _num_across_words_histogram_values++;
+        }
+        else
+          _across_words_histogram[r].observations++;
       }
 
       p++;
@@ -144,9 +159,10 @@ bool CrossWord::validate_solution()
   }
 
   // calculate the number of down words in the solution, and
-  // initialize the down_words offset_len structures
+  // initialize _down_words and _down_words_histograms
 
   _num_down_words = 0;
+  _num_down_words_histogram_values = 0;
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
@@ -160,6 +176,19 @@ bool CrossWord::validate_solution()
 
         _down_words[_num_down_words].len = p + 1;
         _num_down_words++;
+
+        for (r = 0; r < _num_down_words_histogram_values; r++) {
+          if (_down_words_histogram[r].value == p + 1)
+            break;
+        }
+
+        if (r == _num_down_words_histogram_values) {
+          _down_words_histogram[r].value = p + 1;
+          _down_words_histogram[r].observations = 1;
+          _num_down_words_histogram_values++;
+        }
+        else
+          _down_words_histogram[r].observations++;
       }
     }
   }
@@ -247,6 +276,26 @@ void CrossWord::transpose()
   }
 }
 
+const int CrossWord::get_num_across_words_histogram_values() const
+{
+  return _num_across_words_histogram_values;
+}
+
+struct histogram* CrossWord::get_across_words_histogram()
+{
+  return _across_words_histogram;
+}
+
+const int CrossWord::get_num_down_words_histogram_values() const
+{
+  return _num_down_words_histogram_values;
+}
+
+struct histogram* CrossWord::get_down_words_histogram()
+{
+  return _down_words_histogram;
+}
+
 void CrossWord::print(ostream& out)
 {
   int m;
@@ -283,6 +332,13 @@ void CrossWord::print(ostream& out)
     cout << row << endl;
   }
 
+  cout << endl << "across words histogram" << endl << endl;
+
+  for (n = 0; n < _num_across_words_histogram_values; n++) {
+    cout << _across_words_histogram[n].value << " " <<
+      _across_words_histogram[n].observations << endl;
+  }
+
   cout << endl << "DOWN" << endl << endl;
 
   for (m = 0; m < _num_down_words; m++) {
@@ -294,8 +350,12 @@ void CrossWord::print(ostream& out)
     cout << row << endl;
   }
 
-  validate_solution();
-  validate_grid();
+  cout << endl << "down words histogram" << endl << endl;
+
+  for (n = 0; n < _num_down_words_histogram_values; n++) {
+    cout << _down_words_histogram[n].value << " " <<
+      _down_words_histogram[n].observations << endl;
+  }
 }
 
 ostream& operator<<(ostream& out,CrossWord& crossword)
