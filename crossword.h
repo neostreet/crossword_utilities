@@ -1,10 +1,3 @@
-#define MAX_WIDTH 23
-#define MAX_ACROSS_WORDS 200
-#define MAX_DOWN_WORDS   200
-#define MAX_GRID_SIZE (MAX_WIDTH * MAX_WIDTH)
-
-#define MAX_HISTOGRAM_VALUES 21
-
 struct offset_len {
   int offset;
   int len;
@@ -34,25 +27,21 @@ class CrossWord {
 
   const int get_num_letters() const;
 
-  char* get_solution();
+  string& get_solution();
   bool validate_solution();
 
-  char* get_grid();
+  string& get_grid();
   bool validate_grid();
 
-  const int get_num_across_words() const;
-  struct offset_len* get_across_words();
+  vector<struct offset_len>& get_across_words();
 
-  const int get_num_down_words() const;
-  struct offset_len* get_down_words();
+  vector<struct histogram>& get_across_words_histogram();
+
+  vector<struct offset_len>& get_down_words();
+
+  vector<struct histogram>& get_down_words_histogram();
 
   void transpose();
-
-  const int get_num_across_words_histogram_values() const;
-  struct histogram* get_across_words_histogram();
-
-  const int get_num_down_words_histogram_values() const;
-  struct histogram* get_down_words_histogram();
 
   void print(ostream& out);
 
@@ -62,20 +51,16 @@ class CrossWord {
   int _total_squares;
   int _midpoint;
   int _num_letters;
-  char _grid[MAX_GRID_SIZE];
-  char _solution[MAX_GRID_SIZE];
+  string _solution;
+  string _grid;
 
-  int _num_across_words;
-  struct offset_len _across_words[MAX_ACROSS_WORDS];
+  vector<struct offset_len> _across_words;
 
-  int _num_down_words;
-  struct offset_len _down_words[MAX_DOWN_WORDS];
+  vector<struct histogram> _across_words_histogram;
 
-  int _num_across_words_histogram_values;
-  struct histogram _across_words_histogram[MAX_HISTOGRAM_VALUES];
+  vector<struct offset_len> _down_words;
 
-  int _num_down_words_histogram_values;
-  struct histogram _down_words_histogram[MAX_HISTOGRAM_VALUES];
+  vector<struct histogram> _down_words_histogram;
 };
 
 ostream& operator<<(ostream& out,CrossWord& crossword);

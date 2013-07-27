@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <stdio.h>
 #include <string.h>
 using namespace std;
@@ -24,8 +25,6 @@ int main(int argc,char **argv)
   int line_no;
   int width;
   CrossWord crossword;
-  char *grid;
-  char *solution;
 
   if ((argc < 2) || (argc > 3)) {
     printf(usage);
@@ -51,7 +50,7 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  solution = crossword.get_solution();
+  string& solution = crossword.get_solution();
 
   line_no = 0;
 
@@ -72,7 +71,7 @@ int main(int argc,char **argv)
         return 4;
       }
 
-      memcpy(&solution[(line_no - 1) * width],line,width);
+      solution.append(line);
     }
 
     line_no++;
@@ -86,7 +85,7 @@ int main(int argc,char **argv)
     return 5;
   }
 
-  grid = crossword.get_grid();
+  string& grid = crossword.get_grid();
 
   m = 0;
 
@@ -106,7 +105,7 @@ int main(int argc,char **argv)
       return 6;
     }
 
-    memcpy(&grid[m * width],line,width);
+    grid.append(line);
 
     line_no++;
     m++;
