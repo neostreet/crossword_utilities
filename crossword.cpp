@@ -111,6 +111,9 @@ bool CrossWord::validate_solution()
   // calculate the number of across words in the solution, and
   // initialize _across_words and _across_words_histograms
 
+  _across_words.clear();
+  _down_words.clear();
+
   p = 0;
 
   for (n = 0; n < _width; n++) {
