@@ -153,11 +153,11 @@ bool CrossWord::validate_solution()
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
-      if ((_solution[n + m * _width] != '.') && (!m || (_solution[n + (m - 1) * _width] == '.'))) {
-        work1.offset = n + m * _width;
+      if ((_solution[n * _width + m] != '.') && (!n || (_solution[(n - 1) * _width + m] == '.'))) {
+        work1.offset = n * _width + m;
 
-        for (p = 0, q = n + (m + 1) * _width;
-             ((q < n + _width * _width) && (_solution[q] != '.'));
+        for (p = 0, q = (n + 1) * _width + m;
+             ((q < m + _width * _width) && (_solution[q] != '.'));
              p++, q += _width)
           ;
 
