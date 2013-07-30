@@ -35,11 +35,11 @@ class CrossWord {
 
   vector<struct offset_len>& get_across_words();
 
-  vector<struct histogram>& get_across_words_histogram();
+  list<struct histogram>& get_across_words_histogram();
 
   vector<struct offset_len>& get_down_words();
 
-  vector<struct histogram>& get_down_words_histogram();
+  list<struct histogram>& get_down_words_histogram();
 
   void transpose();
 
@@ -56,11 +56,11 @@ class CrossWord {
 
   vector<struct offset_len> _across_words;
 
-  vector<struct histogram> _across_words_histogram;
+  list<struct histogram> _across_words_histogram;
 
   vector<struct offset_len> _down_words;
 
-  vector<struct histogram> _down_words_histogram;
+  list<struct histogram> _down_words_histogram;
 };
 
 ostream& operator<<(ostream& out,CrossWord& crossword);

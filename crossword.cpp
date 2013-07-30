@@ -1,4 +1,5 @@
 #include <iostream>
+#include <list>
 #include <vector>
 #include <stdio.h>
 #include <string.h>
@@ -85,10 +86,11 @@ bool CrossWord::validate_solution()
   int n;
   int p;
   int q;
-  int r;
   int num_letters;
   struct offset_len work1;
+  bool bUpserted;
   struct histogram work2;
+  list<struct histogram>::iterator it;
 
   num_letters = 0;
 
@@ -112,7 +114,7 @@ bool CrossWord::validate_solution()
   // initialize _across_words and _across_words_histograms
 
   _across_words.clear();
-  _down_words.clear();
+  _across_words_histogram.clear();
 
   p = 0;
 
@@ -130,18 +132,28 @@ bool CrossWord::validate_solution()
 
         _across_words.push_back(work1);
 
-        for (r = 0; r < _across_words_histogram.size(); r++) {
-          if (_across_words_histogram[r].value == q - p)
+        bUpserted = false;
+
+        for (it = _across_words_histogram.begin(); it != _across_words_histogram.end(); it++) {
+          if (work1.len == it->value) {
+            it->observations++;
+            bUpserted = true;
             break;
+          }
+          else if (work1.len < it->value) {
+            work2.value = work1.len;
+            work2.observations = 1;
+            _across_words_histogram.insert(it,work2);
+            bUpserted = true;
+            break;
+          }
         }
 
-        if (r == _across_words_histogram.size()) {
-          work2.value = q - p;
+        if (!bUpserted) {
+          work2.value = work1.len;
           work2.observations = 1;
           _across_words_histogram.push_back(work2);
         }
-        else
-          _across_words_histogram[r].observations++;
       }
 
       p++;
@@ -150,6 +162,9 @@ bool CrossWord::validate_solution()
 
   // calculate the number of down words in the solution, and
   // initialize _down_words and _down_words_histograms
+
+  _down_words.clear();
+  _down_words_histogram.clear();
 
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
@@ -162,20 +177,31 @@ bool CrossWord::validate_solution()
           ;
 
         work1.len = p + 1;
+
         _down_words.push_back(work1);;
 
-        for (r = 0; r < _down_words_histogram.size(); r++) {
-          if (_down_words_histogram[r].value == p + 1)
+        bUpserted = false;
+
+        for (it = _down_words_histogram.begin(); it != _down_words_histogram.end(); it++) {
+          if (work1.len == it->value) {
+            it->observations++;
+            bUpserted = true;
             break;
+          }
+          else if (work1.len < it->value) {
+            work2.value = work1.len;
+            work2.observations = 1;
+            _down_words_histogram.insert(it,work2);
+            bUpserted = true;
+            break;
+          }
         }
 
-        if (r == _down_words_histogram.size()) {
-          work2.value = p + 1;
+        if (!bUpserted) {
+          work2.value = work1.len;
           work2.observations = 1;
           _down_words_histogram.push_back(work2);
         }
-        else
-          _down_words_histogram[r].observations++;
       }
     }
   }
@@ -208,7 +234,7 @@ vector<struct offset_len>& CrossWord::get_across_words()
   return _across_words;
 }
 
-vector<struct histogram>& CrossWord::get_across_words_histogram()
+list<struct histogram>& CrossWord::get_across_words_histogram()
 {
   return _across_words_histogram;
 }
@@ -218,7 +244,7 @@ vector<struct offset_len>& CrossWord::get_down_words()
   return _down_words;
 }
 
-vector<struct histogram>& CrossWord::get_down_words_histogram()
+list<struct histogram>& CrossWord::get_down_words_histogram()
 {
   return _down_words_histogram;
 }
@@ -263,7 +289,7 @@ void CrossWord::print(ostream& out)
 {
   int m;
   int n;
-  int p;
+  list<struct histogram>::iterator it;
 
   out << "_width = " << _width << endl;
   out << "_total_squares = " << _total_squares << endl;
@@ -272,8 +298,6 @@ void CrossWord::print(ostream& out)
   out << "_num_letters = " << _num_letters << endl;
   out << "_num_across_words = " << _across_words.size() << endl;
   out << "_num_down_words = " << _down_words.size() << endl;
-
-  p = 0;
 
   for (m = 0; m < _width; m++)
     cout << _solution.substr(m * _width,_width) << endl;
@@ -285,10 +309,8 @@ void CrossWord::print(ostream& out)
 
   cout << endl << "across words histogram" << endl << endl;
 
-  for (n = 0; n < _across_words_histogram.size(); n++) {
-    cout << _across_words_histogram[n].value << " " <<
-      _across_words_histogram[n].observations << endl;
-  }
+  for (it = _across_words_histogram.begin(); it != _across_words_histogram.end(); it++)
+    cout << it->value << " " << it->observations << endl;
 
   cout << endl << "DOWN" << endl << endl;
 
@@ -301,10 +323,8 @@ void CrossWord::print(ostream& out)
 
   cout << endl << "down words histogram" << endl << endl;
 
-  for (n = 0; n < _down_words_histogram.size(); n++) {
-    cout << _down_words_histogram[n].value << " " <<
-      _down_words_histogram[n].observations << endl;
-  }
+  for (it = _down_words_histogram.begin(); it != _down_words_histogram.end(); it++)
+    cout << it->value << " " << it->observations << endl;
 }
 
 ostream& operator<<(ostream& out,CrossWord& crossword)
