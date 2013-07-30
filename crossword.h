@@ -20,6 +20,8 @@ class CrossWord {
   // destructor
   ~CrossWord();
 
+  void clear();
+
   void set_width(int width);
   const int get_width() const;
 

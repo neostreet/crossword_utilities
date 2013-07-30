@@ -53,6 +53,20 @@ CrossWord::~CrossWord()
 {
 }
 
+void CrossWord::clear()
+{
+  _width = 0;
+  _total_squares = 0;
+  _midpoint = 0;
+  _num_letters = 0;
+  _solution.clear();
+  _grid.clear();
+  _across_words.clear();
+  _across_words_histogram.clear();
+  _down_words.clear();
+  _down_words_histogram.clear();
+}
+
 void CrossWord::set_width(int width)
 {
   _width = width;
