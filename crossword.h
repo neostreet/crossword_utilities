@@ -1,6 +1,7 @@
 struct offset_len {
   int offset;
   int len;
+  int clue_number;
 };
 
 struct histogram {

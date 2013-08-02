@@ -98,8 +98,10 @@ bool CrossWord::validate_solution()
 {
   int m;
   int n;
+  int o;
   int p;
   int q;
+  int r;
   int num_letters;
   struct offset_len work1;
   bool bUpserted;
@@ -130,6 +132,7 @@ bool CrossWord::validate_solution()
   _across_words.clear();
   _across_words_histogram.clear();
 
+  o = 0;
   p = 0;
 
   for (n = 0; n < _width; n++) {
@@ -143,6 +146,7 @@ bool CrossWord::validate_solution()
           ;
 
         work1.len = q - p;
+        work1.clue_number = o + 1;
 
         _across_words.push_back(work1);
 
@@ -170,6 +174,11 @@ bool CrossWord::validate_solution()
         }
       }
 
+      if (((_solution[p] != '.') && (!m || (_solution[p-1] == '.'))) ||
+          ((_solution[n * _width + m] != '.') && (!n || (_solution[(n - 1) * _width + m] == '.')))) {
+        o++;
+      }
+
       p++;
     }
   }
@@ -180,17 +189,21 @@ bool CrossWord::validate_solution()
   _down_words.clear();
   _down_words_histogram.clear();
 
+  o = 0;
+  p = 0;
+
   for (n = 0; n < _width; n++) {
     for (m = 0; m < _width; m++) {
       if ((_solution[n * _width + m] != '.') && (!n || (_solution[(n - 1) * _width + m] == '.'))) {
         work1.offset = n * _width + m;
 
-        for (p = 0, q = (n + 1) * _width + m;
+        for (r = 0, q = (n + 1) * _width + m;
              ((q < m + _width * _width) && (_solution[q] != '.'));
-             p++, q += _width)
+             r++, q += _width)
           ;
 
-        work1.len = p + 1;
+        work1.len = r + 1;
+        work1.clue_number = o + 1;
 
         _down_words.push_back(work1);;
 
@@ -217,6 +230,13 @@ bool CrossWord::validate_solution()
           _down_words_histogram.push_back(work2);
         }
       }
+
+      if (((_solution[p] != '.') && (!m || (_solution[p-1] == '.'))) ||
+          ((_solution[n * _width + m] != '.') && (!n || (_solution[(n - 1) * _width + m] == '.')))) {
+        o++;
+      }
+
+      p++;
     }
   }
 
@@ -318,8 +338,10 @@ void CrossWord::print(ostream& out)
 
   cout << endl << "ACROSS" << endl << endl;
 
-  for (m = 0; m < _across_words.size(); m++)
-    cout << _solution.substr(_across_words[m].offset,_across_words[m].len) << endl;
+  for (m = 0; m < _across_words.size(); m++) {
+    cout << _across_words[m].clue_number << ". " <<
+      _solution.substr(_across_words[m].offset,_across_words[m].len) << endl;
+  }
 
   cout << endl << "across words histogram" << endl << endl;
 
@@ -329,6 +351,8 @@ void CrossWord::print(ostream& out)
   cout << endl << "DOWN" << endl << endl;
 
   for (m = 0; m < _down_words.size(); m++) {
+    cout << _down_words[m].clue_number << ". ";
+
     for (n = 0; n < _down_words[m].len; n++)
       cout << _solution.substr(_down_words[m].offset + n * _width,1);
 
