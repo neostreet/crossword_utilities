@@ -129,8 +129,14 @@ bool CrossWord::validate_solution()
   // calculate the number of across words in the solution, and
   // initialize _across_words and _across_words_histograms
 
+  // calculate the number of down words in the solution, and
+  // initialize _down_words and _down_words_histograms
+
   _across_words.clear();
   _across_words_histogram.clear();
+
+  _down_words.clear();
+  _down_words_histogram.clear();
 
   o = 0;
   p = 0;
@@ -174,26 +180,6 @@ bool CrossWord::validate_solution()
         }
       }
 
-      if (((_solution[p] != '.') && (!m || (_solution[p-1] == '.'))) ||
-          ((_solution[n * _width + m] != '.') && (!n || (_solution[(n - 1) * _width + m] == '.')))) {
-        o++;
-      }
-
-      p++;
-    }
-  }
-
-  // calculate the number of down words in the solution, and
-  // initialize _down_words and _down_words_histograms
-
-  _down_words.clear();
-  _down_words_histogram.clear();
-
-  o = 0;
-  p = 0;
-
-  for (n = 0; n < _width; n++) {
-    for (m = 0; m < _width; m++) {
       if ((_solution[n * _width + m] != '.') && (!n || (_solution[(n - 1) * _width + m] == '.'))) {
         work1.offset = n * _width + m;
 
