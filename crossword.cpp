@@ -293,35 +293,28 @@ void CrossWord::transpose()
 {
   int m;
   int n;
-  int p;
-  string work;
+  int old_height;
+  string work1;
+  string work2;
 
-  p = 0;
-
-  for (m = 0; m < _height; m++) {
-    for (n = 0; n < _width; n++)
-      work.push_back(_solution[_width * n + m]);
+  for (m = 0; m < _width; m++) {
+    for (n = 0; n < _height; n++) {
+      work1.push_back(_solution[_width * n + m]);
+      work2.push_back(_grid[_width * n + m]);
+    }
   }
-
-  p = 0;
 
   _solution.clear();
-  _solution = work;
-
-  validate_solution();
-
-  work.clear();
-
-  p = 0;
-
-  for (m = 0; m < _height; m++) {
-    for (n = 0; n < _width; n++)
-      work.push_back(_grid[_width * n + m]);
-  }
+  _solution = work1;
 
   _grid.clear();
-  _grid = work;
+  _grid = work2;
 
+  old_height = _height;
+  _height = _width;
+  _width = old_height;
+
+  validate_solution();
   validate_grid();
 }
 
