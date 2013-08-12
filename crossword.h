@@ -26,6 +26,9 @@ class CrossWord {
   void set_width(int width);
   const int get_width() const;
 
+  void set_height(int height);
+  const int get_height() const;
+
   const int get_total_squares() const;
 
   const int get_num_letters() const;
@@ -51,6 +54,7 @@ class CrossWord {
   private:
 
   int _width;
+  int _height;
   int _total_squares;
   int _midpoint;
   int _num_letters;

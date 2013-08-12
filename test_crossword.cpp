@@ -25,6 +25,7 @@ int main(int argc,char **argv)
   int linelen;
   int line_no;
   int width;
+  int height;
   CrossWord crossword;
 
   if ((argc < 2) || (argc > 3)) {
@@ -62,8 +63,9 @@ int main(int argc,char **argv)
       break;
 
     if (!line_no) {
-      sscanf(line,"%d",&width);
+      sscanf(line,"%d %d",&width,&height);
       crossword.set_width(width);
+      crossword.set_height(height);
     }
     else {
       if (linelen != width) {
@@ -77,7 +79,7 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    if (line_no == width + 1)
+    if (line_no == height + 1)
       break;
   }
 
@@ -111,7 +113,7 @@ int main(int argc,char **argv)
     line_no++;
     m++;
 
-    if (m == width)
+    if (m == height)
       break;
   }
 

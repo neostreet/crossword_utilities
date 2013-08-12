@@ -12,6 +12,7 @@ using namespace std;
 CrossWord::CrossWord()
 {
   _width = 0;
+  _height = 0;
   _total_squares = 0;
   _midpoint = 0;
   _num_letters = 0;
@@ -24,6 +25,7 @@ CrossWord::CrossWord(const CrossWord& crossword)
   int n;
 
   _width = crossword._width;
+  _height = crossword._height;
   _total_squares = crossword._total_squares;
   _midpoint = crossword._midpoint;
   _num_letters = crossword._num_letters;
@@ -38,6 +40,7 @@ CrossWord& CrossWord::operator=(const CrossWord& crossword)
   int n;
 
   _width = crossword._width;
+  _height = crossword._height;
   _total_squares = crossword._total_squares;
   _midpoint = crossword._midpoint;
   _num_letters = crossword._num_letters;
@@ -56,6 +59,7 @@ CrossWord::~CrossWord()
 void CrossWord::clear()
 {
   _width = 0;
+  _height = 0;
   _total_squares = 0;
   _midpoint = 0;
   _num_letters = 0;
@@ -70,13 +74,29 @@ void CrossWord::clear()
 void CrossWord::set_width(int width)
 {
   _width = width;
-  _total_squares = _width * _width;
-  _midpoint = _total_squares / 2;
+  _total_squares = _width * _height;
+
+  if (_total_squares)
+    _midpoint = _total_squares / 2;
 }
 
 const int CrossWord::get_width() const
 {
   return _width;
+}
+
+void CrossWord::set_height(int height)
+{
+  _height = height;
+  _total_squares = _width * _height;
+
+  if (_total_squares)
+    _midpoint = _total_squares / 2;
+}
+
+const int CrossWord::get_height() const
+{
+  return _height;
 }
 
 const int CrossWord::get_total_squares() const
@@ -141,7 +161,7 @@ bool CrossWord::validate_solution()
   o = 0;
   p = 0;
 
-  for (n = 0; n < _width; n++) {
+  for (n = 0; n < _height; n++) {
     for (m = 0; m < _width; m++) {
       if ((_solution[p] != '.') && (!m || (_solution[p-1] == '.'))) {
         work1.offset = p;
@@ -184,7 +204,7 @@ bool CrossWord::validate_solution()
         work1.offset = n * _width + m;
 
         for (r = 0, q = (n + 1) * _width + m;
-             ((q < m + _width * _width) && (_solution[q] != '.'));
+             ((q < m + _height * _width) && (_solution[q] != '.'));
              r++, q += _width)
           ;
 
@@ -278,7 +298,7 @@ void CrossWord::transpose()
 
   p = 0;
 
-  for (m = 0; m < _width; m++) {
+  for (m = 0; m < _height; m++) {
     for (n = 0; n < _width; n++)
       work.push_back(_solution[_width * n + m]);
   }
@@ -294,7 +314,7 @@ void CrossWord::transpose()
 
   p = 0;
 
-  for (m = 0; m < _width; m++) {
+  for (m = 0; m < _height; m++) {
     for (n = 0; n < _width; n++)
       work.push_back(_grid[_width * n + m]);
   }
@@ -312,6 +332,7 @@ void CrossWord::print(ostream& out)
   list<struct histogram>::iterator it;
 
   out << "_width = " << _width << endl;
+  out << "_height = " << _height << endl;
   out << "_total_squares = " << _total_squares << endl;
   out << "_midpoint = " << _midpoint << endl;
   out << "_num_black_squares = " << _total_squares - _num_letters << endl;
@@ -319,7 +340,7 @@ void CrossWord::print(ostream& out)
   out << "_num_across_words = " << _across_words.size() << endl;
   out << "_num_down_words = " << _down_words.size() << endl;
 
-  for (m = 0; m < _width; m++)
+  for (m = 0; m < _height; m++)
     cout << _solution.substr(m * _width,_width) << endl;
 
   cout << endl << "ACROSS" << endl << endl;
