@@ -30,7 +30,6 @@ CrossWord::CrossWord(const CrossWord& crossword)
   _midpoint = crossword._midpoint;
   _num_letters = crossword._num_letters;
   _solution = crossword._solution;
-  _grid = crossword._grid;
 }
 
 // assignment operator
@@ -45,7 +44,6 @@ CrossWord& CrossWord::operator=(const CrossWord& crossword)
   _midpoint = crossword._midpoint;
   _num_letters = crossword._num_letters;
   _solution = crossword._solution;
-  _grid = crossword._grid;
 
   return *this;
 }
@@ -64,7 +62,6 @@ void CrossWord::clear()
   _midpoint = 0;
   _num_letters = 0;
   _solution.clear();
-  _grid.clear();
   _across_words.clear();
   _across_words_histogram.clear();
   _down_words.clear();
@@ -249,26 +246,6 @@ bool CrossWord::validate_solution()
   return true;
 }
 
-string& CrossWord::get_grid()
-{
-  return _grid;
-}
-
-bool CrossWord::validate_grid()
-{
-  int n;
-
-  for (n = 0; n < _total_squares; n++) {
-    if ((_grid[n] == '.') && (_solution[n] != '.'))
-      return false;
-
-    if ((_solution[n] == '.') && (_grid[n] != '.'))
-      return false;
-  }
-
-  return true;
-}
-
 vector<struct offset_len>& CrossWord::get_across_words()
 {
   return _across_words;
@@ -300,22 +277,17 @@ void CrossWord::transpose()
   for (m = 0; m < _width; m++) {
     for (n = 0; n < _height; n++) {
       work1.push_back(_solution[_width * n + m]);
-      work2.push_back(_grid[_width * n + m]);
     }
   }
 
   _solution.clear();
   _solution = work1;
 
-  _grid.clear();
-  _grid = work2;
-
   old_height = _height;
   _height = _width;
   _width = old_height;
 
   validate_solution();
-  validate_grid();
 }
 
 void CrossWord::print(ostream& out)
