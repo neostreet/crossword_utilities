@@ -93,46 +93,7 @@ int main(int argc,char **argv)
     return 6;
   }
 
-  fseek(fptr,0L,SEEK_SET);
-
-  string& grid = crossword.get_grid();
-
-  line_no = 0;
-
-  for ( ; ; ) {
-    GetLine(fptr,line,&linelen,MAX_LINE_LEN);
-
-    if (feof(fptr))
-      break;
-
-    if (line_no) {
-      if (linelen != width) {
-        printf("line %d has a length of %d when it should have a length of %d\n",
-          line_no,linelen,width);
-        return 6;
-      }
-
-      for (n = 0; n < width; n++) {
-        if (line[n] != '.') {
-          line[n] = ' ';
-        }
-      }
-
-      grid.append(line);
-    }
-
-    line_no++;
-
-    if (line_no == height + 1)
-      break;
-  }
-
   fclose(fptr);
-
-  if (!crossword.validate_grid()) {
-    printf("grid is invalid\n");
-    return 7;
-  }
 
   if (bTranspose)
     crossword.transpose();
