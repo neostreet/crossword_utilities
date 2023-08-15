@@ -36,9 +36,6 @@ class CrossWord {
   string& get_solution();
   bool validate_solution();
 
-  string& get_grid();
-  bool validate_grid();
-
   vector<struct offset_len>& get_across_words();
 
   list<struct histogram>& get_across_words_histogram();
@@ -59,7 +56,6 @@ class CrossWord {
   int _midpoint;
   int _num_letters;
   string _solution;
-  string _grid;
 
   vector<struct offset_len> _across_words;
 
