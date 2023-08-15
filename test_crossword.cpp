@@ -83,14 +83,21 @@ int main(int argc,char **argv)
       break;
   }
 
+  if (line_no != height + 1) {
+     printf("wrong number of lines: %d\n",line_no);
+     return 5;
+  }
+
   if (!crossword.validate_solution()) {
     printf("solution is invalid\n");
-    return 5;
+    return 6;
   }
+
+  fseek(fptr,0L,SEEK_SET);
 
   string& grid = crossword.get_grid();
 
-  m = 0;
+  line_no = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&linelen,MAX_LINE_LEN);
@@ -98,22 +105,25 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    if (linelen < width) {
-      for ( ; linelen < width; linelen++)
-        line[linelen] = ' ';
-    }
-    else if (linelen != width) {
-      printf("line %d has a length of %d when it should have a length of %d\n",
-        line_no,linelen,width);
-      return 6;
-    }
+    if (line_no) {
+      if (linelen != width) {
+        printf("line %d has a length of %d when it should have a length of %d\n",
+          line_no,linelen,width);
+        return 6;
+      }
 
-    grid.append(line);
+      for (n = 0; n < width; n++) {
+        if (line[n] != '.') {
+          line[n] = ' ';
+        }
+      }
+
+      grid.append(line);
+    }
 
     line_no++;
-    m++;
 
-    if (m == height)
+    if (line_no == height + 1)
       break;
   }
 
