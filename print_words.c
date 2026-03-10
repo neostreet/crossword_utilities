@@ -26,8 +26,8 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 #define MAX_WORD_LEN 20
 static char word[MAX_WORD_LEN+1];
 
-static void do_across(char *in_buf,int num_lines,int line_len,bool bVerbose);
-static void do_down(char *in_buf,int num_lines,int line_len,bool bVerbose);
+static int do_across(char *in_buf,int num_lines,int line_len,bool bVerbose);
+static int do_down(char *in_buf,int num_lines,int line_len,bool bVerbose);
 
 int main(int argc,char **argv)
 {
@@ -44,6 +44,7 @@ int main(int argc,char **argv)
   int num_lines;
   int line_len;
   int save_line_len;
+  int total_words;
 
   if ((argc < 2) || (argc >3)) {
     printf(usage);
@@ -112,8 +113,8 @@ int main(int argc,char **argv)
     }
   }
 
-  do_across(in_buf,num_lines,save_line_len,bVerbose);
-  do_down(in_buf,num_lines,save_line_len,bVerbose);
+  total_words = do_across(in_buf,num_lines,save_line_len,bVerbose);
+  total_words += do_down(in_buf,num_lines,save_line_len,bVerbose);
 
   free(in_buf);
 
@@ -122,16 +123,19 @@ int main(int argc,char **argv)
   return 0;
 }
 
-static void do_across(char *in_buf,int num_lines,int line_len,bool bVerbose)
+static int do_across(char *in_buf,int num_lines,int line_len,bool bVerbose)
 {
   int m;
   int n;
+  int num_words;
   int offset;
   bool bInWord;
   int word_len;
   int total_letters;
 
   printf("Across\n\n");
+
+  num_words = 0;
 
   if (bVerbose)
     total_letters = 0;
@@ -151,6 +155,7 @@ static void do_across(char *in_buf,int num_lines,int line_len,bool bVerbose)
       }
       else if (bInWord) {
         if (word_len > 1) {
+          num_words++;
           word[word_len] = 0;
 
           if (!bVerbose)
@@ -167,6 +172,7 @@ static void do_across(char *in_buf,int num_lines,int line_len,bool bVerbose)
 
     if (bInWord) {
       if (word_len > 1) {
+        num_words++;
         word[word_len] = 0;
 
         if (!bVerbose)
@@ -180,18 +186,23 @@ static void do_across(char *in_buf,int num_lines,int line_len,bool bVerbose)
   }
 
   if (bVerbose)
-    printf("\ntotal_letters = %d\n",total_letters);
+    printf("\nnum_words = %d, total_letters = %d\n",num_words,total_letters);
+
+  return num_words;
 }
 
-static void do_down(char *in_buf,int num_lines,int line_len,bool bVerbose)
+static int do_down(char *in_buf,int num_lines,int line_len,bool bVerbose)
 {
   int m;
   int n;
+  int num_words;
   bool bInWord;
   int word_len;
   int total_letters;
 
-  printf("Across\n\n");
+  printf("\nDown\n\n");
+
+  num_words = 0;
 
   if (bVerbose)
     total_letters = 0;
@@ -210,6 +221,7 @@ static void do_down(char *in_buf,int num_lines,int line_len,bool bVerbose)
       }
       else if (bInWord) {
         if (word_len > 1) {
+          num_words++;
           word[word_len] = 0;
 
           if (!bVerbose)
@@ -226,6 +238,7 @@ static void do_down(char *in_buf,int num_lines,int line_len,bool bVerbose)
 
     if (bInWord) {
       if (word_len > 1) {
+        num_words++;
         word[word_len] = 0;
 
         if (!bVerbose)
@@ -239,5 +252,7 @@ static void do_down(char *in_buf,int num_lines,int line_len,bool bVerbose)
   }
 
   if (bVerbose)
-    printf("\ntotal_letters = %d\n",total_letters);
+    printf("\nnum_words = %d, total_letters = %d\n",num_words,total_letters);
+
+  return num_words;
 }
