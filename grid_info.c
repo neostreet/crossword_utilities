@@ -1,14 +1,38 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifdef WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#ifndef CYGWIN
+#define O_BINARY 0
+#endif
+#endif
+
+#define LINEFEED 0x0a
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
 static char usage[] = "usage: grid_info filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
+static char couldnt_get_status[] = "couldn't get status of %s\n";
 
-static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int count_blocks(char *line,int line_len);
+static char malloc_failed[] = "malloc of %d bytes failed\n";
+static char read_failed[] = "%s: read of %d bytes failed\n";
+
+#define MAX_WORD_LEN 20
+static char word[MAX_WORD_LEN+1];
+static int word_len_counts[MAX_WORD_LEN-2];
+
 static int grid_info(char *filename);
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
+static void compress(char *in_buf,int width,int height);
+static int count_blocks(char *in_buf,int puzzle_size);
 
 int main(int argc,char **argv)
 {
@@ -31,85 +55,136 @@ int main(int argc,char **argv)
 
 static int grid_info(char *filename)
 {
-  FILE *fptr;
-  int line_len;
-  int line_no;
-  int save_line_len;
+  int retval;
+  char *in_buf;
+  int width;
+  int height;
   int puzzle_size;
   int blocks;
-  int total_blocks;
   double block_pct;
 
-  if ((fptr = fopen(filename,"r")) == NULL) {
-    printf(couldnt_open,filename);
+  retval = read_grid(filename,&in_buf,&width,&height);
+
+  if (retval) {
+    printf("read_grid(() failed: %d\n",retval);
     return 1;
   }
 
-  line_no = 0;
-  total_blocks = 0;
+  compress(in_buf,width,height);
 
-  for ( ; ; ) {
-    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+  puzzle_size = width * height;
+  blocks = count_blocks(in_buf,puzzle_size);
+  block_pct = (double)blocks / (double)puzzle_size * (double)100;
 
-    if (feof(fptr))
-      break;
+  printf("%d x %d, %6.2lf (%d %d)\n",width,height,block_pct,blocks,puzzle_size);
 
-    line_no++;
-
-    if (line_no == 1)
-      save_line_len = line_len;
-    else if (line_len != save_line_len) {
-      printf("length of line %d doesn't conform\n",line_no);
-      return 2;
-    }
-
-    blocks = count_blocks(line,line_len);
-    total_blocks += blocks;
-  }
-
-  fclose(fptr);
-
-  puzzle_size = save_line_len * line_no;
-  block_pct = (double)total_blocks / (double)puzzle_size * (double)100;
-
-  printf("%d x %d, %6.2lf (%d %d)\n",save_line_len,line_no,block_pct,total_blocks,puzzle_size);
+  free(in_buf);
 
   return 0;
 }
 
-static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt)
 {
-  int chara;
-  int local_line_len;
+  int m;
+  int n;
+  struct stat statbuf;
+  off_t mem_amount;
+  char *in_buf;
+  int in_buf_ix;
+  int fhndl;
+  int bytes_to_io;
+  int width;
+  int height;
+  int save_width;
 
-  local_line_len = 0;
-
-  for ( ; ; ) {
-    chara = fgetc(fptr);
-
-    if (feof(fptr))
-      break;
-
-    if (chara == '\n')
-      break;
-
-    if (local_line_len < maxllen - 1)
-      line[local_line_len++] = (char)chara;
+  if (stat(filename,&statbuf) == -1) {
+    printf(couldnt_get_status,filename);
+    return 1;
   }
 
-  line[local_line_len] = 0;
-  *line_len = local_line_len;
+  mem_amount = (size_t)statbuf.st_size;
+
+  if ((in_buf = (char *)malloc(mem_amount)) == NULL) {
+    printf(malloc_failed,mem_amount);
+    return 2;
+  }
+
+  if ((fhndl = open(filename,O_BINARY | O_RDONLY,0)) == -1) {
+    printf(couldnt_open,filename);
+    free(in_buf);
+    return 3;
+  }
+
+  bytes_to_io = (int)mem_amount;
+
+  if (read(fhndl,in_buf,bytes_to_io) != bytes_to_io) {
+    printf(read_failed,filename,bytes_to_io);
+    free(in_buf);
+    close(fhndl);
+    return 4;
+  }
+
+  for (n = 0; n < MAX_WORD_LEN - 2; n++)
+    word_len_counts[n] = 0;
+
+  height = 0;
+  m = 0;
+
+  for (n = 0; n < bytes_to_io; n++) {
+    if (in_buf[n] == LINEFEED) {
+      width = n - m;
+      m = n + 1;
+      height++;
+
+      if (height == 1) {
+        save_width = width;
+        continue;
+      }
+
+      if (width != save_width) {
+        printf("length of line %d doesn't conform\n",height);
+        free(in_buf);
+        close(fhndl);
+        return 5;
+      }
+    }
+  }
+
+  close(fhndl);
+
+  *in_buf_pt = in_buf;
+  *width_pt = width;
+  *height_pt = height;
+
+  return 0;
 }
 
-static int count_blocks(char *line,int line_len)
+static void compress(char *in_buf,int width,int height)
+{
+  int m;
+  int n;
+  int p;
+
+  m = width;
+  n = width + 1;
+
+  for (p = 0; p < (height - 1) * width; p++) {
+    in_buf[m++] = in_buf[n++];
+
+    if (in_buf[n] == LINEFEED)
+      n++;
+  }
+}
+
+static int count_blocks(char *in_buf,int puzzle_size)
 {
   int n;
   int blocks;
 
   blocks = 0;
 
-  for (n = 0; n < line_len; n++) {
-    if (line[n] == '.')
+  for (n = 0; n < puzzle_size; n++) {
+    if (in_buf[n] == '.')
       blocks++;
   }
 
