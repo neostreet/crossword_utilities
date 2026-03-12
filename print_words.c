@@ -67,6 +67,11 @@ int main(int argc,char **argv)
 
   retval = read_grid(argv[curr_arg],&in_buf,&width,&height);
 
+  if (retval) {
+    printf("read_grid(() failed: %d\n",retval);
+    return 3;
+  }
+
   compress(in_buf,width,height);
 
   total_words = do_across(in_buf,width,height,bVerbose,&num_across_letters);
