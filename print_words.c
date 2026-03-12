@@ -27,6 +27,7 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 static char word[MAX_WORD_LEN+1];
 static int word_len_counts[MAX_WORD_LEN-2];
 
+static void compress(char *in_buf,int num_lines,int line_len);
 static int do_across(char *in_buf,int num_lines,int line_len,bool bVerbose,int *num_letters_pt);
 static int do_down(char *in_buf,int num_lines,int line_len,bool bVerbose,int *num_letters_pt);
 
@@ -122,6 +123,8 @@ int main(int argc,char **argv)
     }
   }
 
+  compress(in_buf,num_lines,save_line_len);
+
   total_words = do_across(in_buf,num_lines,save_line_len,bVerbose,&num_across_letters);
   total_words += do_down(in_buf,num_lines,save_line_len,bVerbose,&num_down_letters);
   total_letters = num_across_letters + num_down_letters;
@@ -141,6 +144,23 @@ int main(int argc,char **argv)
   return 0;
 }
 
+static void compress(char *in_buf,int num_lines,int line_len)
+{
+  int m;
+  int n;
+  int p;
+
+  m = line_len;
+  n = line_len + 1;
+
+  for (p = 0; p < (num_lines - 1) * line_len; p++) {
+    in_buf[m++] = in_buf[n++];
+
+    if (in_buf[n] == LINEFEED)
+      n++;
+  }
+}
+
 static int do_across(char *in_buf,int num_lines,int line_len,bool bVerbose,int *num_letters_pt)
 {
   int m;
@@ -157,7 +177,7 @@ static int do_across(char *in_buf,int num_lines,int line_len,bool bVerbose,int *
   num_letters = 0;
 
   for (m = 0; m < num_lines; m++) {
-    offset = m * (line_len + 1);
+    offset = m * line_len;
     bInWord = false;
 
     for (n = 0; n < line_len; n++) {
@@ -229,13 +249,13 @@ static int do_down(char *in_buf,int num_lines,int line_len,bool bVerbose,int *nu
     bInWord = false;
 
     for (n = 0; n < num_lines; n++) {
-      if (in_buf[m + n * (line_len + 1)] != '.') {
+      if (in_buf[m + n * line_len] != '.') {
         if (!bInWord) {
           bInWord = true;
           word_len = 0;
         }
 
-        word[word_len++] = in_buf[m + n * (line_len + 1)];
+        word[word_len++] = in_buf[m + n * line_len];
       }
       else if (bInWord) {
         if (word_len > 1) {
