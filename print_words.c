@@ -67,7 +67,7 @@ int main(int argc,char **argv)
 
   retval = read_grid(argv[curr_arg],&in_buf,&width,&height);
 
-  compress(in_buf,height,width);
+  compress(in_buf,width,height);
 
   total_words = do_across(in_buf,width,height,bVerbose,&num_across_letters);
   total_words += do_down(in_buf,width,height,bVerbose,&num_down_letters);
