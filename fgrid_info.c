@@ -75,7 +75,7 @@ static int grid_info(char *listfile)
       if (line_no == 1)
         save_line_len = line_len;
       else if (line_len != save_line_len) {
-        printf("5s: length of line %d doesn't conform\n",filename,line_no);
+        printf("%s: length of line %d doesn't conform\n",filename,line_no);
         continue;
       }
 
