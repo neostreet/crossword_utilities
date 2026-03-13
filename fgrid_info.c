@@ -11,31 +11,43 @@ static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int count_blocks(char *line,int line_len);
-static int grid_info(char *listfile);
+static int grid_info(char *filename);
 
 int main(int argc,char **argv)
 {
   int retval;
+  FILE *fptr0;
+  int filename_len;
 
   if (argc != 2) {
     printf(usage);
     return 1;
   }
 
-  retval = grid_info(argv[1]);
-
-  if (retval) {
-    printf("grid_info of %s failed: %d\n",argv[1],retval);
+  if ((fptr0 = fopen(argv[1],"r")) == NULL) {
+    printf(couldnt_open,argv[1]);
     return 2;
   }
+
+  for ( ; ; ) {
+    GetLine(fptr0,filename,&filename_len,MAX_LINE_LEN);
+
+    if (feof(fptr0))
+      break;
+
+    retval = grid_info(filename);
+
+    if (retval)
+      printf("grid_info of %s failed: %d\n",filename,retval);
+  }
+
+  fclose(fptr0);
 
   return 0;
 }
 
-static int grid_info(char *listfile)
+static int grid_info(char *filename)
 {
-  FILE *fptr0;
-  int filename_len;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -45,53 +57,39 @@ static int grid_info(char *listfile)
   int total_blocks;
   double block_pct;
 
-  if ((fptr0 = fopen(listfile,"r")) == NULL) {
-    printf(couldnt_open,listfile);
+  if ((fptr = fopen(filename,"r")) == NULL) {
+    printf(couldnt_open,filename);
     return 1;
   }
 
-  for ( ; ; ) {
-    GetLine(fptr0,filename,&filename_len,MAX_LINE_LEN);
+  line_no = 0;
+  total_blocks = 0;
 
-    if (feof(fptr0))
+  for ( ; ; ) {
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr))
       break;
 
-    if ((fptr = fopen(filename,"r")) == NULL) {
-      printf(couldnt_open,filename);
-      continue;
+    line_no++;
+
+    if (line_no == 1)
+      save_line_len = line_len;
+    else if (line_len != save_line_len) {
+      printf("length of line %d doesn't conform\n",line_no);
+      return 2;
     }
 
-    line_no = 0;
-    total_blocks = 0;
-
-    for ( ; ; ) {
-      GetLine(fptr,line,&line_len,MAX_LINE_LEN);
-
-      if (feof(fptr))
-        break;
-
-      line_no++;
-
-      if (line_no == 1)
-        save_line_len = line_len;
-      else if (line_len != save_line_len) {
-        printf("%s: length of line %d doesn't conform\n",filename,line_no);
-        continue;
-      }
-
-      blocks = count_blocks(line,line_len);
-      total_blocks += blocks;
-    }
-
-    fclose(fptr);
-
-    puzzle_size = save_line_len * line_no;
-    block_pct = (double)total_blocks / (double)puzzle_size * (double)100;
-
-    printf("%s: %d x %d, %6.2lf (%d %d)\n",filename,save_line_len,line_no,block_pct,total_blocks,puzzle_size);
+    blocks = count_blocks(line,line_len);
+    total_blocks += blocks;
   }
 
-  fclose(fptr0);
+  fclose(fptr);
+
+  puzzle_size = save_line_len * line_no;
+  block_pct = (double)total_blocks / (double)puzzle_size * (double)100;
+
+  printf("%s: %d x %d, %6.2lf (%d %d)\n",filename,save_line_len,line_no,block_pct,total_blocks,puzzle_size);
 
   return 0;
 }
