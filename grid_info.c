@@ -76,7 +76,7 @@ static int grid_info(char *filename)
   blocks = count_blocks(in_buf,puzzle_size);
   block_pct = (double)blocks / (double)puzzle_size * (double)100;
 
-  printf("%d x %d, %6.2lf (%d %d)\n",width,height,block_pct,blocks,puzzle_size);
+  printf("%s: %d x %d, %6.2lf (%d %d)\n",filename,width,height,block_pct,blocks,puzzle_size);
 
   free(in_buf);
 
