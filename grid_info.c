@@ -33,6 +33,7 @@ static int grid_info(char *filename);
 static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
 static void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
+static int has_symmetry(char *in_buf,int puzzle_size);
 
 int main(int argc,char **argv)
 {
@@ -62,6 +63,7 @@ static int grid_info(char *filename)
   int puzzle_size;
   int blocks;
   double block_pct;
+  bool bHasSymmetry;
 
   retval = read_grid(filename,&in_buf,&width,&height);
 
@@ -75,8 +77,12 @@ static int grid_info(char *filename)
   puzzle_size = width * height;
   blocks = count_blocks(in_buf,puzzle_size);
   block_pct = (double)blocks / (double)puzzle_size * (double)100;
+  bHasSymmetry = has_symmetry(in_buf,puzzle_size);
 
-  printf("%s: %d x %d, %6.2lf (%d %d)\n",filename,width,height,block_pct,blocks,puzzle_size);
+  printf("%s: %d x %d, %s, %6.2lf (%d %d)\n",
+    filename,width,height,
+    (bHasSymmetry ? "symmetric" : "asymmetric"),
+    block_pct,blocks,puzzle_size);
 
   free(in_buf);
 
@@ -189,4 +195,20 @@ static int count_blocks(char *in_buf,int puzzle_size)
   }
 
   return blocks;
+}
+
+static int has_symmetry(char *in_buf,int puzzle_size)
+{
+  int m;
+  int n;
+
+  for (m = 0,n = puzzle_size - 1; (m < n); m++,n--) {
+    if (((in_buf[n] == '.') && (in_buf[m] != '.')) ||
+        ((in_buf[n] != '.') && (in_buf[m] == '.'))) {
+
+      return false;
+    }
+  }
+
+  return true;
 }
