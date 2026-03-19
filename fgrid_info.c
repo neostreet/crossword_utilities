@@ -38,6 +38,7 @@ static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_p
 static void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
 static int has_symmetry(char *in_buf,int puzzle_size);
+static int count_theme_letters(char *in_buf,int puzzle_size);
 
 int main(int argc,char **argv)
 {
@@ -106,6 +107,8 @@ static int grid_info(char *filename)
   int blocks;
   double block_pct;
   bool bHasSymmetry;
+  int theme_letters;
+  double theme_letters_pct;
 
   retval = read_grid(filename,&in_buf,&width,&height);
 
@@ -120,11 +123,14 @@ static int grid_info(char *filename)
   blocks = count_blocks(in_buf,puzzle_size);
   block_pct = (double)blocks / (double)puzzle_size * (double)100;
   bHasSymmetry = has_symmetry(in_buf,puzzle_size);
+  theme_letters = count_theme_letters(in_buf,puzzle_size);
+  theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
 
-  printf("%s: %d x %d, %s, %6.2lf (%d %d)\n",
+  printf("%s: %d x %d, %s, blocks %6.2lf%% (%d %d) theme_letters %6.2lf%% (%d %d)\n",
     filename,width,height,
     (bHasSymmetry ? "symmetric" : "asymmetric"),
-    block_pct,blocks,puzzle_size);
+    block_pct,blocks,puzzle_size,
+    theme_letters_pct,theme_letters,puzzle_size);
 
   free(in_buf);
 
@@ -253,4 +259,19 @@ static int has_symmetry(char *in_buf,int puzzle_size)
   }
 
   return true;
+}
+
+static int count_theme_letters(char *in_buf,int puzzle_size)
+{
+  int n;
+  int theme_letters;
+
+  theme_letters = 0;
+
+  for (n = 0; n < puzzle_size; n++) {
+    if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
+      theme_letters++;
+  }
+
+  return theme_letters;
 }
