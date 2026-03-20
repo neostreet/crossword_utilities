@@ -18,7 +18,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: grid_info filename\n";
+static char usage[] = "usage: grid_info (-terse_modemode) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
 
@@ -29,7 +29,7 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 static char word[MAX_WORD_LEN+1];
 static int word_len_counts[MAX_WORD_LEN-2];
 
-static int grid_info(char *filename,bool bTerse);
+static int grid_info(char *filename,int terse_mode);
 static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
 static void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
@@ -40,18 +40,18 @@ int main(int argc,char **argv)
 {
   int retval;
   int curr_arg;
-  bool bTerse;
+  int terse_mode;
 
   if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  bTerse = false;
+  terse_mode = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-terse"))
-      bTerse = true;
+    if (!strncmp(argv[curr_arg],"-terse_mode",11))
+      sscanf(&argv[curr_arg][11],"%d",&terse_mode);
     else
       break;
   }
@@ -61,7 +61,7 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  retval = grid_info(argv[curr_arg],bTerse);
+  retval = grid_info(argv[curr_arg],terse_mode);
 
   if (retval) {
     printf("grid_info of %s failed: %d\n",argv[curr_arg],retval);
@@ -71,7 +71,7 @@ int main(int argc,char **argv)
   return 0;
 }
 
-static int grid_info(char *filename,bool bTerse)
+static int grid_info(char *filename,int terse_mode)
 {
   int retval;
   char *in_buf;
@@ -96,20 +96,21 @@ static int grid_info(char *filename,bool bTerse)
   puzzle_size = width * height;
   blocks = count_blocks(in_buf,puzzle_size);
   block_pct = (double)blocks / (double)puzzle_size * (double)100;
+  bHasSymmetry = has_symmetry(in_buf,puzzle_size);
+  theme_letters = count_theme_letters(in_buf,puzzle_size);
+  theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
 
-  if (!bTerse) {
-    bHasSymmetry = has_symmetry(in_buf,puzzle_size);
-    theme_letters = count_theme_letters(in_buf,puzzle_size);
-    theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
+  if (!terse_mode) {
     printf("%s: %d x %d, %s, blocks %6.2lf%% (%d %d) theme_letters %6.2lf%% (%d %d)\n",
       filename,width,height,
       (bHasSymmetry ? "symmetric" : "asymmetric"),
       block_pct,blocks,puzzle_size,
       theme_letters_pct,theme_letters,puzzle_size);
   }
-  else  {
+  else if (terse_mode == 1)
     printf("%5.2lf (%d %d) %d x %d %s\n",block_pct,blocks,puzzle_size,width,height,filename);
-  }
+  else if (terse_mode == 2)
+    printf("%5.2lf (%d %d) %d x %d %s\n",theme_letters_pct,theme_letters,puzzle_size,width,height,filename);
 
   free(in_buf);
 
