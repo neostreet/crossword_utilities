@@ -29,7 +29,7 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 static char word[MAX_WORD_LEN+1];
 static int word_len_counts[MAX_WORD_LEN-2];
 
-static int grid_info(char *filename);
+static int grid_info(char *filename,bool bTerse);
 static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
 static void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
@@ -39,23 +39,39 @@ static int count_theme_letters(char *in_buf,int puzzle_size);
 int main(int argc,char **argv)
 {
   int retval;
+  int curr_arg;
+  bool bTerse;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  retval = grid_info(argv[1]);
+  bTerse = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
+    return 2;
+  }
+
+  retval = grid_info(argv[curr_arg],bTerse);
 
   if (retval) {
-    printf("grid_info of %s failed: %d\n",argv[1],retval);
-    return 2;
+    printf("grid_info of %s failed: %d\n",argv[curr_arg],retval);
+    return 3;
   }
 
   return 0;
 }
 
-static int grid_info(char *filename)
+static int grid_info(char *filename,bool bTerse)
 {
   int retval;
   char *in_buf;
@@ -80,15 +96,20 @@ static int grid_info(char *filename)
   puzzle_size = width * height;
   blocks = count_blocks(in_buf,puzzle_size);
   block_pct = (double)blocks / (double)puzzle_size * (double)100;
-  bHasSymmetry = has_symmetry(in_buf,puzzle_size);
-  theme_letters = count_theme_letters(in_buf,puzzle_size);
-  theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
 
-  printf("%s: %d x %d, %s, blocks %6.2lf%% (%d %d) theme_letters %6.2lf%% (%d %d)\n",
-    filename,width,height,
-    (bHasSymmetry ? "symmetric" : "asymmetric"),
-    block_pct,blocks,puzzle_size,
-    theme_letters_pct,theme_letters,puzzle_size);
+  if (!bTerse) {
+    bHasSymmetry = has_symmetry(in_buf,puzzle_size);
+    theme_letters = count_theme_letters(in_buf,puzzle_size);
+    theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
+    printf("%s: %d x %d, %s, blocks %6.2lf%% (%d %d) theme_letters %6.2lf%% (%d %d)\n",
+      filename,width,height,
+      (bHasSymmetry ? "symmetric" : "asymmetric"),
+      block_pct,blocks,puzzle_size,
+      theme_letters_pct,theme_letters,puzzle_size);
+  }
+  else  {
+    printf("%5.2lf (%d %d) %d x %d %s\n",block_pct,blocks,puzzle_size,width,height,filename);
+  }
 
   free(in_buf);
 
