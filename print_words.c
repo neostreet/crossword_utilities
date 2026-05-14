@@ -15,7 +15,7 @@
 
 #define LINEFEED 0x0a
 
-static char usage[] = "usage: print_words (-terse) (-verbose) filename\n";
+static char usage[] = "usage: print_words (-terse) (-verbose) (-lenval) filename\n";
 
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
@@ -29,8 +29,8 @@ static int word_len_counts[MAX_WORD_LEN-2];
 
 static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
 static void compress(char *in_buf,int width,int height);
-static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt);
-static int do_down(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt);
+static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt,int exact_word_len);
+static int do_down(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt,int exact_word_len);
 
 int main(int argc,char **argv)
 {
@@ -38,6 +38,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bTerse;
   bool bVerbose;
+  int exact_word_len;
   int retval;
   char *in_buf;
   int width;
@@ -47,19 +48,22 @@ int main(int argc,char **argv)
   int num_down_letters;
   int total_letters;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
   bVerbose = false;
+  exact_word_len = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strncmp(argv[curr_arg],"-len",4))
+      sscanf(&argv[curr_arg][4],"%d",&exact_word_len);
     else
       break;
   }
@@ -83,8 +87,8 @@ int main(int argc,char **argv)
 
   compress(in_buf,width,height);
 
-  total_words = do_across(in_buf,width,height,bTerse,bVerbose,&num_across_letters);
-  total_words += do_down(in_buf,width,height,bTerse,bVerbose,&num_down_letters);
+  total_words = do_across(in_buf,width,height,bTerse,bVerbose,&num_across_letters,exact_word_len);
+  total_words += do_down(in_buf,width,height,bTerse,bVerbose,&num_down_letters,exact_word_len);
   total_letters = num_across_letters + num_down_letters;
 
   if (bVerbose)
@@ -195,7 +199,7 @@ static void compress(char *in_buf,int width,int height)
   }
 }
 
-static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt)
+static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt,int exact_word_len)
 {
   int m;
   int n;
@@ -232,10 +236,12 @@ static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose
           num_letters += word_len;
 
           if (!bTerse) {
-            if (!bVerbose)
-              printf("  %s\n",word);
-            else
-              printf("  %s (%d)\n",word,word_len);
+            if ((exact_word_len == -1) || (word_len == exact_word_len)) {
+              if (!bVerbose)
+                printf("  %s\n",word);
+              else
+                printf("  %s (%d)\n",word,word_len);
+            }
           }
         }
 
@@ -251,16 +257,18 @@ static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose
         num_letters += word_len;
 
         if (!bTerse) {
-          if (!bVerbose)
-            printf("  %s\n",word);
-          else
-            printf("  %s (%d)\n",word,word_len);
+          if ((exact_word_len == -1) || (word_len == exact_word_len)) {
+            if (!bVerbose)
+              printf("  %s\n",word);
+            else
+              printf("  %s (%d)\n",word,word_len);
+          }
         }
       }
     }
   }
 
-  if (bVerbose)
+  if (bVerbose && (exact_word_len == -1))
     printf("\nnum_words = %d, num_letters = %d\n",num_words,num_letters);
 
   *num_letters_pt = num_letters;
@@ -268,7 +276,7 @@ static int do_across(char *in_buf,int width,int height,bool bTerse,bool bVerbose
   return num_words;
 }
 
-static int do_down(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt)
+static int do_down(char *in_buf,int width,int height,bool bTerse,bool bVerbose,int *num_letters_pt,int exact_word_len)
 {
   int m;
   int n;
@@ -303,10 +311,12 @@ static int do_down(char *in_buf,int width,int height,bool bTerse,bool bVerbose,i
           num_letters += word_len;
 
           if (!bTerse) {
-            if (!bVerbose)
-              printf("  %s\n",word);
-            else
-              printf("  %s (%d)\n",word,word_len);
+            if ((exact_word_len == -1) || (word_len == exact_word_len)) {
+              if (!bVerbose)
+                printf("  %s\n",word);
+              else
+                printf("  %s (%d)\n",word,word_len);
+            }
           }
         }
 
@@ -322,10 +332,12 @@ static int do_down(char *in_buf,int width,int height,bool bTerse,bool bVerbose,i
         num_letters += word_len;
 
         if (!bTerse) {
-          if (!bVerbose)
-            printf("  %s\n",word);
-          else
-            printf("  %s (%d)\n",word,word_len);
+          if ((exact_word_len == -1) || (word_len == exact_word_len)) {
+            if (!bVerbose)
+              printf("  %s\n",word);
+            else
+              printf("  %s (%d)\n",word,word_len);
+          }
         }
       }
     }
