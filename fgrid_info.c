@@ -18,9 +18,6 @@
 #define MAX_FILENAME_LEN 256
 static char filename[MAX_FILENAME_LEN];
 
-#define MAX_LINE_LEN 1024
-static char line[MAX_LINE_LEN];
-
 static char usage[] = "usage: fgrid_info (-terse_modemode) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
@@ -73,7 +70,7 @@ int main(int argc,char **argv)
   }
 
   for ( ; ; ) {
-    GetLine(fptr0,filename,&filename_len,MAX_LINE_LEN);
+    GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
 
     if (feof(fptr0))
       break;
