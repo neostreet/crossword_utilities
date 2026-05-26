@@ -15,9 +15,6 @@
 
 #define LINEFEED 0x0a
 
-#define MAX_LINE_LEN 1024
-static char line[MAX_LINE_LEN];
-
 static char usage[] = "usage: unchecked_letters (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
