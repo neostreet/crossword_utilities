@@ -167,9 +167,9 @@ static int grid_info(char *filename,int terse_mode)
     printf("%s\n",filename);
     printf("  %d x %d\n",width,height);
     printf("  %s\n",(bHasSymmetry ? "symmetric" : "asymmetric"));
-    printf("  blocks %6.2lf%% (%d %d)\n",block_pct,blocks,puzzle_size);
-    printf("  theme letters %6.2lf%% (%d %d)\n",theme_letters_pct,theme_letters,puzzle_size);
-    printf("  unchecked letters %6.2lf%% (%d %d)\n",unchecked_pct,num_unchecked_letters,puzzle_size);
+    printf("  %6.2lf%% blocks (%d %d)\n",block_pct,blocks,puzzle_size);
+    printf("  %6.2lf%% theme letters (%d %d)\n",theme_letters_pct,theme_letters,puzzle_size);
+    printf("  %6.2lf%% unchecked letters (%d %d)\n",unchecked_pct,num_unchecked_letters,puzzle_size);
   }
   else if (terse_mode == 1)
     printf("%5.2lf (%d %d) %d x %d %s\n",block_pct,blocks,puzzle_size,width,height,filename);
