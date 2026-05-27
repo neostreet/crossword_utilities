@@ -120,7 +120,9 @@ static int unchecked_letters(char *filename,int bVerbose)
   char *in_buf;
   int width;
   int height;
+  int puzzle_size;
   int num_unchecked_letters;
+  double unchecked_pct;
 
   retval = read_grid(filename,&in_buf,&width,&height);
 
@@ -130,6 +132,7 @@ static int unchecked_letters(char *filename,int bVerbose)
   }
 
   compress(in_buf,width,height);
+  puzzle_size = width * height;
 
   num_unchecked_letters = 0;
   p = 0;
@@ -150,7 +153,11 @@ static int unchecked_letters(char *filename,int bVerbose)
   if (bVerbose)
     print_grid(in_buf,width,height);
 
-  printf("num_unchecked_letters = %d\n",num_unchecked_letters);
+  unchecked_pct = (double)num_unchecked_letters / (double)puzzle_size * (double)100;
+
+  printf("%s: %d x %d, unchecked_letters %6.2lf%% (%d %d)\n",
+    filename,width,height,
+    unchecked_pct,num_unchecked_letters,puzzle_size);
 
   free(in_buf);
 
