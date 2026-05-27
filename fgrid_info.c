@@ -140,11 +140,11 @@ static int grid_info(char *filename,int terse_mode)
   theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
 
   if (!terse_mode) {
-    printf("%s: %d x %d, %s, blocks %6.2lf%% (%d %d) theme_letters %6.2lf%% (%d %d)\n",
-      filename,width,height,
-      (bHasSymmetry ? "symmetric" : "asymmetric"),
-      block_pct,blocks,puzzle_size,
-      theme_letters_pct,theme_letters,puzzle_size);
+    printf("%s\n",filename);
+    printf("  %d x %d\n",width,height);
+    printf("  %s\n",(bHasSymmetry ? "symmetric" : "asymmetric"));
+    printf("  blocks %6.2lf%% (%d %d)\n",block_pct,blocks,puzzle_size);
+    printf("  theme letters %6.2lf%% (%d %d)\n",theme_letters_pct,theme_letters,puzzle_size);
   }
   else if (terse_mode == 1)
     printf("%5.2lf (%d %d) %d x %d %s\n",block_pct,blocks,puzzle_size,width,height,filename);
