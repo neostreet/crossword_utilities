@@ -36,6 +36,7 @@ static void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
 static int has_symmetry(char *in_buf,int puzzle_size);
 static int count_theme_letters(char *in_buf,int puzzle_size);
+static bool unchecked_letter(char *in_buf,int width,int height,int m,int n,int p);
 
 int main(int argc,char **argv)
 {
@@ -112,6 +113,9 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
 static int grid_info(char *filename,int terse_mode)
 {
+  int m;
+  int n;
+  int p;
   int retval;
   char *in_buf;
   int width;
@@ -122,6 +126,8 @@ static int grid_info(char *filename,int terse_mode)
   bool bHasSymmetry;
   int theme_letters;
   double theme_letters_pct;
+  int num_unchecked_letters;
+  double unchecked_pct;
 
   retval = read_grid(filename,&in_buf,&width,&height);
 
@@ -139,12 +145,31 @@ static int grid_info(char *filename,int terse_mode)
   theme_letters = count_theme_letters(in_buf,puzzle_size);
   theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
 
+  num_unchecked_letters = 0;
+  p = 0;
+
+  for (m = 0; m < height; m++) {
+    for (n = 0; n < width; n++) {
+      if (in_buf[p] != '.') {
+        if (!unchecked_letter(in_buf,width,height,m,n,p))
+          in_buf[p] = ' ';
+        else
+          num_unchecked_letters++;
+      }
+
+      p++;
+    }
+  }
+
+  unchecked_pct = (double)num_unchecked_letters / (double)puzzle_size * (double)100;
+
   if (!terse_mode) {
     printf("%s\n",filename);
     printf("  %d x %d\n",width,height);
     printf("  %s\n",(bHasSymmetry ? "symmetric" : "asymmetric"));
     printf("  blocks %6.2lf%% (%d %d)\n",block_pct,blocks,puzzle_size);
     printf("  theme letters %6.2lf%% (%d %d)\n",theme_letters_pct,theme_letters,puzzle_size);
+    printf("  unchecked letters %6.2lf%% (%d %d)\n",unchecked_pct,num_unchecked_letters,puzzle_size);
   }
   else if (terse_mode == 1)
     printf("%5.2lf (%d %d) %d x %d %s\n",block_pct,blocks,puzzle_size,width,height,filename);
@@ -293,4 +318,47 @@ static int count_theme_letters(char *in_buf,int puzzle_size)
   }
 
   return theme_letters;
+}
+
+static bool unchecked_letter(char *in_buf,int width,int height,int m,int n,int p)
+{
+  bool bHaveAcross;
+  bool bHaveDown;
+  int dbg;
+
+  bHaveAcross = false;
+
+  if (n > 0) {
+    if (in_buf[p - 1] != '.')
+      bHaveAcross = true;
+  }
+
+  if (!bHaveAcross) {
+    if (n < width - 1) {
+      if (in_buf[p + 1] != '.')
+        bHaveAcross = true;
+    }
+  }
+
+  if (!bHaveAcross)
+    return true;
+
+  bHaveDown = false;
+
+  if (m > 0) {
+    if (in_buf[p - width] != '.')
+      bHaveDown = true;
+  }
+
+  if (!bHaveDown) {
+    if (m < height - 1) {
+      if (in_buf[p + width] != '.')
+        bHaveDown = true;
+    }
+  }
+
+  if (!bHaveDown)
+    return true;
+
+  return false;
 }
