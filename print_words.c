@@ -15,7 +15,7 @@
 
 #define LINEFEED 0x0a
 
-static char usage[] = "usage: print_words (-terse_modemode) (-verbose) (-lenval) filename\n";
+static char usage[] = "usage: print_words (-terse_modemode) (-verbose) (-lenval) (-lower) filename\n";
 
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
@@ -27,7 +27,7 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 static char word[MAX_WORD_LEN+1];
 static int word_len_counts[MAX_WORD_LEN-2];
 
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,bool bLower);
 static void compress(char *in_buf,int width,int height);
 static int do_across(char *in_buf,int width,int height,int terse_mode,bool bVerbose,int *num_letters_pt,int exact_word_len);
 static int do_down(char *in_buf,int width,int height,int terse_mode,bool bVerbose,int *num_letters_pt,int exact_word_len);
@@ -39,6 +39,7 @@ int main(int argc,char **argv)
   int terse_mode;
   bool bVerbose;
   int exact_word_len;
+  bool bLower;
   int retval;
   char *in_buf;
   int width;
@@ -48,7 +49,7 @@ int main(int argc,char **argv)
   int num_down_letters;
   int total_letters;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -56,6 +57,7 @@ int main(int argc,char **argv)
   terse_mode = 0;
   bVerbose = false;
   exact_word_len = -1;
+  bLower = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-terse_mode",11))
@@ -64,6 +66,8 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strncmp(argv[curr_arg],"-len",4))
       sscanf(&argv[curr_arg][4],"%d",&exact_word_len);
+    else if (!strcmp(argv[curr_arg],"-lower"))
+      bLower = true;
     else
       break;
   }
@@ -78,7 +82,7 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  retval = read_grid(argv[curr_arg],&in_buf,&width,&height);
+  retval = read_grid(argv[curr_arg],&in_buf,&width,&height,bLower);
 
   if (retval) {
     printf("read_grid(() failed: %d\n",retval);
@@ -106,7 +110,7 @@ int main(int argc,char **argv)
   return 0;
 }
 
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt)
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,bool bLower)
 {
   int m;
   int n;
@@ -145,6 +149,13 @@ static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_p
     free(in_buf);
     close(fhndl);
     return 4;
+  }
+
+  if (bLower) {
+    for (n = 0; n < bytes_to_io; n++) {
+      if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
+        in_buf[n] += ('a' - 'A');
+    }
   }
 
   for (n = 0; n < MAX_WORD_LEN - 2; n++)
