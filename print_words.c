@@ -15,7 +15,7 @@
 
 #define LINEFEED 0x0a
 
-static char usage[] = "usage: print_words (-terse_modemode) (-verbose) (-lenval) (-lower) filename\n";
+static char usage[] = "usage: print_words (-terse_modemode) (-verbose) (-exact_word_lenval) (-lower) filename\n";
 
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
@@ -64,8 +64,8 @@ int main(int argc,char **argv)
       sscanf(&argv[curr_arg][11],"%d",&terse_mode);
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
-    else if (!strncmp(argv[curr_arg],"-len",4))
-      sscanf(&argv[curr_arg][4],"%d",&exact_word_len);
+    else if (!strncmp(argv[curr_arg],"-exact_word_len",15))
+      sscanf(&argv[curr_arg][15],"%d",&exact_word_len);
     else if (!strcmp(argv[curr_arg],"-lower"))
       bLower = true;
     else
