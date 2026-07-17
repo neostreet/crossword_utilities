@@ -21,6 +21,7 @@ struct grid_shape {
 
 #define  MAX_GRID_SHAPES 20
 static struct grid_shape grid_shapes[MAX_GRID_SHAPES];
+static int ixs[MAX_GRID_SHAPES];
 
 #define LINEFEED 0x0a
 
@@ -36,6 +37,7 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int read_grid(char *filename,int *width_pt,int *height_pt);
+static int elem_compare(const void *elem1,const void *elem2);
 
 int main(int argc,char **argv)
 {
@@ -112,7 +114,13 @@ int main(int argc,char **argv)
   fclose(fptr0);
 
   for (n = 0; n < num_grid_shapes; n++)
-    printf("%3d %d X %d\n",grid_shapes[n].count,grid_shapes[n].width,grid_shapes[n].height);
+    ixs[n] = n;
+
+
+  qsort(ixs,num_grid_shapes,sizeof (int),elem_compare);
+
+  for (n = 0; n < num_grid_shapes; n++)
+    printf("%3d %d X %d\n",grid_shapes[ixs[n]].count,grid_shapes[ixs[n]].width,grid_shapes[ixs[n]].height);
 
   return 0;
 }
@@ -212,4 +220,20 @@ static int read_grid(char *filename,int *width_pt,int *height_pt)
   *height_pt = height;
 
   return 0;
+}
+
+static int elem_compare(const void *elem1,const void *elem2)
+{
+  int ix1;
+  int ix2;
+
+  ix1 = *(int *)elem1;
+  ix2 = *(int *)elem2;
+
+  if (grid_shapes[ix1].width > grid_shapes[ix2].width)
+    return 1;
+  else if (grid_shapes[ix1].width < grid_shapes[ix2].width)
+    return -1;
+  else
+    return 0;
 }
