@@ -27,6 +27,7 @@ static int dbg_p;
 static int unchecked_letters(char *filename,int bVerbose);
 static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
 static void compress(char *in_buf,int width,int height);
+static int count_unchecked_letters(char *in_buf,int width,int height);
 static bool unchecked_letter(char *in_buf,int width,int height,int m,int n,int p);
 static void print_grid(char *grid,int width,int height);
 
@@ -67,9 +68,6 @@ int main(int argc,char **argv)
 
 static int unchecked_letters(char *filename,int bVerbose)
 {
-  int m;
-  int n;
-  int p;
   int retval;
   char *in_buf;
   int width;
@@ -84,22 +82,7 @@ static int unchecked_letters(char *filename,int bVerbose)
   }
 
   compress(in_buf,width,height);
-
-  num_unchecked_letters = 0;
-  p = 0;
-
-  for (m = 0; m < height; m++) {
-    for (n = 0; n < width; n++) {
-      if (in_buf[p] != '.') {
-        if (!unchecked_letter(in_buf,width,height,m,n,p))
-          in_buf[p] = ' ';
-        else
-          num_unchecked_letters++;
-      }
-
-      p++;
-    }
-  }
+  num_unchecked_letters = count_unchecked_letters(in_buf,width,height);
 
   if (bVerbose)
     print_grid(in_buf,width,height);
@@ -199,6 +182,32 @@ static void compress(char *in_buf,int width,int height)
     if (in_buf[n] == LINEFEED)
       n++;
   }
+}
+
+static int count_unchecked_letters(char *in_buf,int width,int height)
+{
+  int m;
+  int n;
+  int p;
+  int num_unchecked_letters;
+
+  p = 0;
+  num_unchecked_letters = 0;
+
+  for (m = 0; m < height; m++) {
+    for (n = 0; n < width; n++) {
+      if (in_buf[p] != '.') {
+        if (!unchecked_letter(in_buf,width,height,m,n,p))
+          in_buf[p] = ' ';
+        else
+          num_unchecked_letters++;
+      }
+
+      p++;
+    }
+  }
+
+  return num_unchecked_letters;
 }
 
 static bool unchecked_letter(char *in_buf,int width,int height,int m,int n,int p)
