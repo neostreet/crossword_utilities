@@ -25,10 +25,6 @@ static char couldnt_get_status[] = "couldn't get status of %s\n";
 static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
-#define MAX_WORD_LEN 20
-static char word[MAX_WORD_LEN+1];
-static int word_len_counts[MAX_WORD_LEN-2];
-
 static int dbg_p;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -204,9 +200,6 @@ static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_p
     close(fhndl);
     return 4;
   }
-
-  for (n = 0; n < MAX_WORD_LEN - 2; n++)
-    word_len_counts[n] = 0;
 
   height = 0;
   m = 0;
