@@ -433,5 +433,10 @@ static bool is_a_theme_word(char *word)
       return false;
   }
 
+  // theme words must be at least three letters
+
+  if (n < 3)
+    return false;
+
   return true;
 }
