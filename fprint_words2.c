@@ -31,7 +31,7 @@ static char word[MAX_WORD_LEN+1];
 static int word_len_counts[MAX_WORD_LEN-2];
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower);
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
 static void compress(char *in_buf,int width,int height);
 static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
 static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
@@ -102,7 +102,7 @@ int main(int argc,char **argv)
 
     printf("%s\n",filename);
 
-    retval = read_grid(filename,&in_buf,&width,&height,lower);
+    retval = read_grid(filename,&in_buf,&width,&height,lower,upper);
 
     if (retval) {
       printf("read_grid(() failed: %d\n",retval);
@@ -159,7 +159,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower)
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper)
 {
   int m;
   int n;
@@ -204,6 +204,13 @@ static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_p
     for (n = 0; n < bytes_to_io; n++) {
       if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
         in_buf[n] += ('a' - 'A');
+    }
+  }
+
+  if (upper) {
+    for (n = 0; n < bytes_to_io; n++) {
+      if ((in_buf[n] >= 'a') && (in_buf[n] <= 'z'))
+        in_buf[n] -= ('a' - 'A');
     }
   }
 
