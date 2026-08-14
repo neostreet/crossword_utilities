@@ -297,12 +297,13 @@ static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_le
       }
       else if (bInWord) {
         if (word_len > 1) {
-          num_words++;
           word[word_len] = 0;
           word_len_counts[word_len - 2]++;
-          num_letters += word_len;
 
           if (!theme_words || is_a_theme_word(word)) {
+            num_words++;
+            num_letters += word_len;
+
             if (!bPrinted) {
               printf("  Across\n\n");
               bPrinted = true;
@@ -321,12 +322,13 @@ static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_le
 
     if (bInWord) {
       if (word_len > 1) {
-        num_words++;
         word[word_len] = 0;
         word_len_counts[word_len - 2]++;
-        num_letters += word_len;
 
         if (!theme_words || is_a_theme_word(word)) {
+          num_words++;
+          num_letters += word_len;
+
           if (!bPrinted) {
             printf("  Across\n\n");
             bPrinted = true;
@@ -382,12 +384,13 @@ static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_lett
       }
       else if (bInWord) {
         if (word_len > 1) {
-          num_words++;
           word[word_len] = 0;
           word_len_counts[word_len - 2]++;
-          num_letters += word_len;
 
           if (!theme_words || is_a_theme_word(word)) {
+            num_words++;
+            num_letters += word_len;
+
             if (!bPrinted) {
               printf("  Down\n\n");
               bPrinted = true;
@@ -406,12 +409,13 @@ static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_lett
 
     if (bInWord) {
       if (word_len > 1) {
-        num_words++;
         word[word_len] = 0;
         word_len_counts[word_len - 2]++;
-        num_letters += word_len;
 
         if (!theme_words || is_a_theme_word(word)) {
+          num_words++;
+          num_letters += word_len;
+
           if (!bPrinted) {
             printf("  Down\n\n");
             bPrinted = true;
