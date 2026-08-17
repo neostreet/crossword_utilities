@@ -346,7 +346,7 @@ static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_le
   if (bPrinted) {
     putchar(0x0a);
 
-    if (bVerbose)
+    if (bVerbose && !theme_words)
       printf("    num_words = %d, num_letters = %d\n\n",num_words,num_letters);
   }
 
@@ -433,7 +433,7 @@ static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_lett
   if (bPrinted) {
     putchar(0x0a);
 
-    if (bVerbose)
+    if (bVerbose && !theme_words)
       printf("    num_words = %d, num_letters = %d\n",num_words,num_letters);
   }
 
