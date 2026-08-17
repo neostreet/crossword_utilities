@@ -15,66 +15,36 @@
 
 #define LINEFEED 0x0a
 
-#define MAX_FILENAME_LEN 256
-static char filename[MAX_FILENAME_LEN];
-static char outfilename[MAX_FILENAME_LEN];
-
-static char usage[] = "usage: fprint_words2 (-verbose) (-lower) (-upper) (-theme_words) filename\n";
+static char usage[] = "usage: grid_info (-terse_modemode) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
 
 static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
-#define MAX_WORD_LEN 20
-static char word[MAX_WORD_LEN+1];
-static int word_len_counts[MAX_WORD_LEN-2];
-
-static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
+static int grid_info(char *filename,int terse_mode);
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt);
 static void compress(char *in_buf,int width,int height);
-static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
-static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
-static bool is_a_theme_word(char *word);
+static int count_blocks(char *in_buf,int puzzle_size);
+static int has_symmetry(char *in_buf,int puzzle_size);
+static int count_theme_letters(char *in_buf,int puzzle_size);
 
 int main(int argc,char **argv)
 {
-  int n;
-  int curr_arg;
-  bool bVerbose;
-  int lower;
-  int upper;
-  int theme_words;
-  FILE *fptr0;
-  int filename_len;
   int retval;
-  char *in_buf;
-  int width;
-  int height;
-  int total_words;
-  int num_across_letters;
-  int num_down_letters;
-  int total_letters;
+  int curr_arg;
+  int terse_mode;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  bVerbose = false;
-  lower = 0;
-  upper = 0;
-  theme_words = 0;
+  terse_mode = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = true;
-    else if (!strcmp(argv[curr_arg],"-lower"))
-      lower = 1;
-    else if (!strcmp(argv[curr_arg],"-upper"))
-      upper = 1;
-    else if (!strcmp(argv[curr_arg],"-theme_words"))
-      theme_words = 1;
+    if (!strncmp(argv[curr_arg],"-terse_mode",11))
+      sscanf(&argv[curr_arg][11],"%d",&terse_mode);
     else
       break;
   }
@@ -84,82 +54,63 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if (lower + upper + theme_words > 1) {
-    printf("can't specify more than one of -lower, -upper, and -theme_words\n");
+  retval = grid_info(argv[curr_arg],terse_mode);
+
+  if (retval) {
+    printf("grid_info of %s failed: %d\n",argv[curr_arg],retval);
     return 3;
   }
-
-  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
-    printf(couldnt_open,argv[curr_arg]);
-    return 4;
-  }
-
-  for ( ; ; ) {
-    GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
-
-    if (feof(fptr0))
-      break;
-
-    printf("%s\n",filename);
-
-    retval = read_grid(filename,&in_buf,&width,&height,lower,upper);
-
-    if (retval) {
-      printf("read_grid(() failed: %d\n",retval);
-      continue;
-    }
-
-    compress(in_buf,width,height);
-
-    total_words = do_across(in_buf,width,height,bVerbose,&num_across_letters,theme_words);
-    total_words += do_down(in_buf,width,height,bVerbose,&num_down_letters,theme_words);
-    total_letters = num_across_letters + num_down_letters;
-
-    if (bVerbose)
-      printf("\n  total_words = %d, total_letters = %d\n\n",total_words,total_letters);
-
-    if (bVerbose) {
-      for (n = 0; n < MAX_WORD_LEN - 2; n++) {
-        if (word_len_counts[n])
-          printf("  %2d %2d\n",word_len_counts[n],n+2);
-      }
-
-      putchar(0x0a);
-    }
-
-    free(in_buf);
-  }
-
-  fclose(fptr0);
 
   return 0;
 }
 
-static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+static int grid_info(char *filename,int terse_mode)
 {
-  int chara;
-  int local_line_len;
+  int retval;
+  char *in_buf;
+  int width;
+  int height;
+  int puzzle_size;
+  int blocks;
+  double block_pct;
+  bool bHasSymmetry;
+  int theme_letters;
+  double theme_letters_pct;
 
-  local_line_len = 0;
+  retval = read_grid(filename,&in_buf,&width,&height);
 
-  for ( ; ; ) {
-    chara = fgetc(fptr);
-
-    if (feof(fptr))
-      break;
-
-    if (chara == '\n')
-      break;
-
-    if (local_line_len < maxllen - 1)
-      line[local_line_len++] = (char)chara;
+  if (retval) {
+    printf("read_grid(() failed: %d\n",retval);
+    return 1;
   }
 
-  line[local_line_len] = 0;
-  *line_len = local_line_len;
+  compress(in_buf,width,height);
+
+  puzzle_size = width * height;
+  blocks = count_blocks(in_buf,puzzle_size);
+  block_pct = (double)blocks / (double)puzzle_size * (double)100;
+  bHasSymmetry = has_symmetry(in_buf,puzzle_size);
+  theme_letters = count_theme_letters(in_buf,puzzle_size);
+  theme_letters_pct = (double)theme_letters / (double)puzzle_size * (double)100;
+
+  if (!terse_mode) {
+    printf("%s: %d x %d, %s, blocks %6.2lf%% (%d %d) theme_letters %6.2lf%% (%d %d)\n",
+      filename,width,height,
+      (bHasSymmetry ? "symmetric" : "asymmetric"),
+      block_pct,blocks,puzzle_size,
+      theme_letters_pct,theme_letters,puzzle_size);
+  }
+  else if (terse_mode == 1)
+    printf("%5.2lf (%d %d) %d x %d %s\n",block_pct,blocks,puzzle_size,width,height,filename);
+  else if (terse_mode == 2)
+    printf("%5.2lf (%d %d) %d x %d %s\n",theme_letters_pct,theme_letters,puzzle_size,width,height,filename);
+
+  free(in_buf);
+
+  return 0;
 }
 
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper)
+static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt)
 {
   int m;
   int n;
@@ -199,23 +150,6 @@ static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_p
     close(fhndl);
     return 4;
   }
-
-  if (lower) {
-    for (n = 0; n < bytes_to_io; n++) {
-      if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
-        in_buf[n] += ('a' - 'A');
-    }
-  }
-
-  if (upper) {
-    for (n = 0; n < bytes_to_io; n++) {
-      if ((in_buf[n] >= 'a') && (in_buf[n] <= 'z'))
-        in_buf[n] -= ('a' - 'A');
-    }
-  }
-
-  for (n = 0; n < MAX_WORD_LEN - 2; n++)
-    word_len_counts[n] = 0;
 
   height = 0;
   m = 0;
@@ -266,197 +200,48 @@ static void compress(char *in_buf,int width,int height)
   }
 }
 
-static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words)
+static int count_blocks(char *in_buf,int puzzle_size)
+{
+  int n;
+  int blocks;
+
+  blocks = 0;
+
+  for (n = 0; n < puzzle_size; n++) {
+    if (in_buf[n] == '.')
+      blocks++;
+  }
+
+  return blocks;
+}
+
+static int has_symmetry(char *in_buf,int puzzle_size)
 {
   int m;
   int n;
-  int num_words;
-  int offset;
-  bool bInWord;
-  int word_len;
-  int num_letters;
-  bool bPrinted;
 
-  bPrinted = false;
+  for (m = 0,n = puzzle_size - 1; (m < n); m++,n--) {
+    if (((in_buf[n] == '.') && (in_buf[m] != '.')) ||
+        ((in_buf[n] != '.') && (in_buf[m] == '.'))) {
 
-  num_words = 0;
-  num_letters = 0;
-
-  for (m = 0; m < height; m++) {
-    offset = m * width;
-    bInWord = false;
-
-    for (n = 0; n < width; n++) {
-      if (in_buf[offset + n] != '.') {
-        if (!bInWord) {
-          bInWord = true;
-          word_len = 0;
-        }
-
-        word[word_len++] = in_buf[offset + n];
-      }
-      else if (bInWord) {
-        if (word_len > 1) {
-          word[word_len] = 0;
-
-          if (!theme_words || is_a_theme_word(word)) {
-            num_words++;
-            num_letters += word_len;
-            word_len_counts[word_len - 2]++;
-
-            if (!bPrinted) {
-              printf("  Across\n\n");
-              bPrinted = true;
-            }
-
-            if (!bVerbose)
-              printf("    %s\n",word);
-            else
-              printf("    %s (%d)\n",word,word_len);
-          }
-        }
-
-        bInWord = false;
-      }
-    }
-
-    if (bInWord) {
-      if (word_len > 1) {
-        word[word_len] = 0;
-
-        if (!theme_words || is_a_theme_word(word)) {
-          num_words++;
-          num_letters += word_len;
-          word_len_counts[word_len - 2]++;
-
-          if (!bPrinted) {
-            printf("  Across\n\n");
-            bPrinted = true;
-          }
-
-          if (!bVerbose)
-            printf("    %s\n",word);
-          else
-            printf("    %s (%d)\n",word,word_len);
-        }
-      }
-    }
-  }
-
-  if (bPrinted) {
-    putchar(0x0a);
-
-    if (bVerbose && !theme_words)
-      printf("    num_words = %d, num_letters = %d\n\n",num_words,num_letters);
-  }
-
-  *num_letters_pt = num_letters;
-
-  return num_words;
-}
-
-static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words)
-{
-  int m;
-  int n;
-  int num_words;
-  bool bInWord;
-  int word_len;
-  int num_letters;
-  bool bPrinted;
-
-  bPrinted = false;
-
-  num_words = 0;
-  num_letters = 0;
-
-  for (m = 0; m < width; m++) {
-    bInWord = false;
-
-    for (n = 0; n < height; n++) {
-      if (in_buf[m + n * width] != '.') {
-        if (!bInWord) {
-          bInWord = true;
-          word_len = 0;
-        }
-
-        word[word_len++] = in_buf[m + n * width];
-      }
-      else if (bInWord) {
-        if (word_len > 1) {
-          word[word_len] = 0;
-
-          if (!theme_words || is_a_theme_word(word)) {
-            num_words++;
-            num_letters += word_len;
-            word_len_counts[word_len - 2]++;
-
-            if (!bPrinted) {
-              printf("  Down\n\n");
-              bPrinted = true;
-            }
-
-            if (!bVerbose)
-              printf("    %s\n",word);
-            else
-              printf("    %s (%d)\n",word,word_len);
-          }
-        }
-
-        bInWord = false;
-      }
-    }
-
-    if (bInWord) {
-      if (word_len > 1) {
-        word[word_len] = 0;
-
-        if (!theme_words || is_a_theme_word(word)) {
-          num_words++;
-          num_letters += word_len;
-          word_len_counts[word_len - 2]++;
-
-          if (!bPrinted) {
-            printf("  Down\n\n");
-            bPrinted = true;
-          }
-
-          if (!bVerbose)
-            printf("    %s\n",word);
-          else
-            printf("    %s (%d)\n",word,word_len);
-        }
-      }
-    }
-  }
-
-  if (bPrinted) {
-    putchar(0x0a);
-
-    if (bVerbose && !theme_words)
-      printf("    num_words = %d, num_letters = %d\n",num_words,num_letters);
-  }
-
-  *num_letters_pt = num_letters;
-
-  return num_words;
-}
-
-static bool is_a_theme_word(char *word)
-{
-  int n;
-
-  // theme words are all in caps
-
-  for (n = 0; (word[n]); n++) {
-    if ((word[n] < 'A') || (word[n] > 'Z'))
       return false;
+    }
   }
-
-  // theme words must be at least three letters
-
-  if (n < 3)
-    return false;
 
   return true;
+}
+
+static int count_theme_letters(char *in_buf,int puzzle_size)
+{
+  int n;
+  int theme_letters;
+
+  theme_letters = 0;
+
+  for (n = 0; n < puzzle_size; n++) {
+    if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
+      theme_letters++;
+  }
+
+  return theme_letters;
 }
