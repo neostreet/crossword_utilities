@@ -19,7 +19,8 @@
 static char filename[MAX_FILENAME_LEN];
 static char outfilename[MAX_FILENAME_LEN];
 
-static char usage[] = "usage: fprint_words (-terse_modemode) (-verbose) (-exact_word_lenval) (-lower) filename\n";
+static char usage[] = "usage: fprint_words (-terse_modemode) (-verbose) (-exact_word_lenval) (-lower) (-upper)\n"
+"  filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
 
@@ -28,12 +29,12 @@ static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
 static char word[MAX_WORD_LEN+1];
-static int word_len_counts[MAX_WORD_LEN-2];
+int word_len_counts[MAX_WORD_LEN-2];
 
-static void build_outfilename(char *filename,char *outfilename,int terse_mode,bool bVerbose,int exact_word_len,bool bLower);
+static void build_outfilename(char *filename,char *outfilename,int terse_mode,bool bVerbose,int exact_word_len,int lower,int upper);
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,bool bLower);
-static void compress(char *in_buf,int width,int height);
+int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
+void compress(char *in_buf,int width,int height);
 static int do_across(char *in_buf,int width,int height,int terse_mode,bool bVerbose,int *num_letters_pt,int exact_word_len,FILE *out_fptr);
 static int do_down(char *in_buf,int width,int height,int terse_mode,bool bVerbose,int *num_letters_pt,int exact_word_len,FILE *out_fptr);
 
@@ -44,7 +45,8 @@ int main(int argc,char **argv)
   int terse_mode;
   bool bVerbose;
   int exact_word_len;
-  bool bLower;
+  int lower;
+  int upper;
   FILE *fptr0;
   int filename_len;
   FILE *out_fptr;
@@ -65,7 +67,8 @@ int main(int argc,char **argv)
   terse_mode = 0;
   bVerbose = false;
   exact_word_len = -1;
-  bLower = false;
+  lower = 0;
+  upper = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-terse_mode",11))
@@ -75,7 +78,9 @@ int main(int argc,char **argv)
     else if (!strncmp(argv[curr_arg],"-exact_word_len",15))
       sscanf(&argv[curr_arg][15],"%d",&exact_word_len);
     else if (!strcmp(argv[curr_arg],"-lower"))
-      bLower = true;
+      lower = 1;
+    else if (!strcmp(argv[curr_arg],"-upper"))
+      upper = 1;
     else
       break;
   }
@@ -90,9 +95,14 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (lower + upper > 1) {
+    printf("can't specify both -lower and -upper\n");
+    return 4;
+  }
+
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   for ( ; ; ) {
@@ -101,14 +111,14 @@ int main(int argc,char **argv)
     if (feof(fptr0))
       break;
 
-    build_outfilename(filename,outfilename,terse_mode,bVerbose,exact_word_len,bLower);
+    build_outfilename(filename,outfilename,terse_mode,bVerbose,exact_word_len,lower,upper);
 
     if ((out_fptr = fopen(outfilename,"w")) == NULL) {
       printf(couldnt_open,outfilename);
       continue;
     }
 
-    retval = read_grid(filename,&in_buf,&width,&height,bLower);
+    retval = read_grid(filename,&in_buf,&width,&height,lower,upper);
 
     if (retval) {
       printf("read_grid(() failed: %d\n",retval);
@@ -140,12 +150,13 @@ int main(int argc,char **argv)
   return 0;
 }
 
-static void build_outfilename(char *filename,char *outfilename,int terse_mode,bool bVerbose,int exact_word_len,bool bLower)
+static void build_outfilename(char *filename,char *outfilename,int terse_mode,bool bVerbose,int exact_word_len,int lower,int upper)
 {
-  sprintf(outfilename,"%s.terse_mode.%d%s.exact_word_len.%d%s.fprint_words",
+  sprintf(outfilename,"%s.terse_mode.%d%s.exact_word_len.%d%s%s.fprint_words",
     filename,terse_mode,
     (!bVerbose ? "" : ".verbose"),exact_word_len,
-    (!bLower ? "" : ".lower"));
+    (!lower ? "" : ".lower"),
+    (!upper ? "" : ".upper"));
 }
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
@@ -170,106 +181,6 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
-}
-
-static int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,bool bLower)
-{
-  int m;
-  int n;
-  struct stat statbuf;
-  off_t mem_amount;
-  char *in_buf;
-  int in_buf_ix;
-  int fhndl;
-  int bytes_to_io;
-  int width;
-  int height;
-  int save_width;
-
-  if (stat(filename,&statbuf) == -1) {
-    printf(couldnt_get_status,filename);
-    return 1;
-  }
-
-  mem_amount = (size_t)statbuf.st_size;
-
-  if ((in_buf = (char *)malloc(mem_amount)) == NULL) {
-    printf(malloc_failed,mem_amount);
-    return 2;
-  }
-
-  if ((fhndl = open(filename,O_BINARY | O_RDONLY,0)) == -1) {
-    printf(couldnt_open,filename);
-    free(in_buf);
-    return 3;
-  }
-
-  bytes_to_io = (int)mem_amount;
-
-  if (read(fhndl,in_buf,bytes_to_io) != bytes_to_io) {
-    printf(read_failed,filename,bytes_to_io);
-    free(in_buf);
-    close(fhndl);
-    return 4;
-  }
-
-  if (bLower) {
-    for (n = 0; n < bytes_to_io; n++) {
-      if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
-        in_buf[n] += ('a' - 'A');
-    }
-  }
-
-  for (n = 0; n < MAX_WORD_LEN - 2; n++)
-    word_len_counts[n] = 0;
-
-  height = 0;
-  m = 0;
-
-  for (n = 0; n < bytes_to_io; n++) {
-    if (in_buf[n] == LINEFEED) {
-      width = n - m;
-      m = n + 1;
-      height++;
-
-      if (height == 1) {
-        save_width = width;
-        continue;
-      }
-
-      if (width != save_width) {
-        printf("length of line %d doesn't conform\n",height);
-        free(in_buf);
-        close(fhndl);
-        return 5;
-      }
-    }
-  }
-
-  close(fhndl);
-
-  *in_buf_pt = in_buf;
-  *width_pt = width;
-  *height_pt = height;
-
-  return 0;
-}
-
-static void compress(char *in_buf,int width,int height)
-{
-  int m;
-  int n;
-  int p;
-
-  m = width;
-  n = width + 1;
-
-  for (p = 0; p < (height - 1) * width; p++) {
-    in_buf[m++] = in_buf[n++];
-
-    if (in_buf[n] == LINEFEED)
-      n++;
-  }
 }
 
 static int do_across(char *in_buf,int width,int height,int terse_mode,bool bVerbose,int *num_letters_pt,int exact_word_len,FILE *out_fptr)
