@@ -15,7 +15,8 @@
 
 #define LINEFEED 0x0a
 
-static char usage[] = "usage: print_words (-terse_modemode) (-verbose) (-exact_word_lenval) (-lower) filename\n";
+static char usage[] = "usage: print_words (-terse_modemode) (-verbose) (-exact_word_lenval) (-lower) (-upper)\n"
+"  filename\n";
 
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
@@ -39,7 +40,8 @@ int main(int argc,char **argv)
   int terse_mode;
   bool bVerbose;
   int exact_word_len;
-  bool bLower;
+  int lower;
+  int upper;
   int retval;
   char *in_buf;
   int width;
@@ -49,7 +51,7 @@ int main(int argc,char **argv)
   int num_down_letters;
   int total_letters;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -57,7 +59,8 @@ int main(int argc,char **argv)
   terse_mode = 0;
   bVerbose = false;
   exact_word_len = -1;
-  bLower = false;
+  lower = 0;
+  upper = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-terse_mode",11))
@@ -67,7 +70,9 @@ int main(int argc,char **argv)
     else if (!strncmp(argv[curr_arg],"-exact_word_len",15))
       sscanf(&argv[curr_arg][15],"%d",&exact_word_len);
     else if (!strcmp(argv[curr_arg],"-lower"))
-      bLower = true;
+      lower = 1;
+    else if (!strcmp(argv[curr_arg],"-upper"))
+      upper = 1;
     else
       break;
   }
@@ -82,11 +87,16 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  retval = read_grid(argv[curr_arg],&in_buf,&width,&height,0,0);
+  if (lower + upper > 1) {
+    printf("can't specify both -lower and -upper\n");
+    return 4;
+  }
+
+  retval = read_grid(argv[curr_arg],&in_buf,&width,&height,lower,upper);
 
   if (retval) {
     printf("read_grid(() failed: %d\n",retval);
-    return 4;
+    return 5;
   }
 
   compress(in_buf,width,height);
