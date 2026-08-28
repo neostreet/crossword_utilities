@@ -353,4 +353,3 @@ static bool is_a_theme_word(char *word)
 
   return true;
 }
-sa
