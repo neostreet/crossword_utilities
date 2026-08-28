@@ -15,6 +15,11 @@
 
 #define LINEFEED 0x0a
 
+#define MAX_FILENAME_LEN 256
+static char filename[MAX_FILENAME_LEN];
+static char outfilename[MAX_FILENAME_LEN];
+
+static char usage[] = "usage: fprint_words2 (-verbose) (-lower) (-upper) (-theme_words) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
 
@@ -22,118 +27,330 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
-extern int word_len_counts[];
+static char word[MAX_WORD_LEN+1];
+int word_len_counts[MAX_WORD_LEN-2];
 
-int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper)
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
+void compress(char *in_buf,int width,int height);
+static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
+static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
+static bool is_a_theme_word(char *word);
+
+int main(int argc,char **argv)
 {
-  int m;
   int n;
-  struct stat statbuf;
-  off_t mem_amount;
+  int curr_arg;
+  bool bVerbose;
+  int lower;
+  int upper;
+  int theme_words;
+  FILE *fptr0;
+  int filename_len;
+  int retval;
   char *in_buf;
-  int in_buf_ix;
-  int fhndl;
-  int bytes_to_io;
   int width;
   int height;
-  int save_width;
+  int total_words;
+  int num_across_letters;
+  int num_down_letters;
+  int total_letters;
 
-  if (stat(filename,&statbuf) == -1) {
-    printf(couldnt_get_status,filename);
+  if ((argc < 2) || (argc > 6)) {
+    printf(usage);
     return 1;
   }
 
-  mem_amount = (size_t)statbuf.st_size;
+  bVerbose = false;
+  lower = 0;
+  upper = 0;
+  theme_words = 0;
 
-  if ((in_buf = (char *)malloc(mem_amount)) == NULL) {
-    printf(malloc_failed,mem_amount);
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-lower"))
+      lower = 1;
+    else if (!strcmp(argv[curr_arg],"-upper"))
+      upper = 1;
+    else if (!strcmp(argv[curr_arg],"-theme_words"))
+      theme_words = 1;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
   }
 
-  if ((fhndl = open(filename,O_BINARY | O_RDONLY,0)) == -1) {
-    printf(couldnt_open,filename);
-    free(in_buf);
+  if (lower + upper + theme_words > 1) {
+    printf("can't specify more than one of -lower, -upper, and -theme_words\n");
     return 3;
   }
 
-  bytes_to_io = (int)mem_amount;
-
-  if (read(fhndl,in_buf,bytes_to_io) != bytes_to_io) {
-    printf(read_failed,filename,bytes_to_io);
-    free(in_buf);
-    close(fhndl);
+  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
     return 4;
   }
 
-  if (lower) {
-    for (n = 0; n < bytes_to_io; n++) {
-      if ((in_buf[n] >= 'A') && (in_buf[n] <= 'Z'))
-        in_buf[n] += ('a' - 'A');
+  for ( ; ; ) {
+    GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
+
+    if (feof(fptr0))
+      break;
+
+    printf("%s\n",filename);
+
+    retval = read_grid(filename,&in_buf,&width,&height,lower,upper);
+
+    if (retval) {
+      printf("read_grid(() failed: %d\n",retval);
+      continue;
     }
-  }
 
-  if (upper) {
-    for (n = 0; n < bytes_to_io; n++) {
-      if ((in_buf[n] >= 'a') && (in_buf[n] <= 'z'))
-        in_buf[n] -= ('a' - 'A');
-    }
-  }
+    compress(in_buf,width,height);
 
-  for (n = 0; n < MAX_WORD_LEN - 2; n++)
-    word_len_counts[n] = 0;
+    total_words = do_across(in_buf,width,height,bVerbose,&num_across_letters,theme_words);
+    total_words += do_down(in_buf,width,height,bVerbose,&num_down_letters,theme_words);
+    total_letters = num_across_letters + num_down_letters;
 
-  height = 0;
-  m = 0;
+    if (bVerbose)
+      printf("\n  total_words = %d, total_letters = %d\n\n",total_words,total_letters);
 
-  for (n = 0; n < bytes_to_io; n++) {
-    if (in_buf[n] == LINEFEED) {
-      width = n - m;
-      m = n + 1;
-      height++;
-
-      if (height == 1) {
-        save_width = width;
-        continue;
+    if (bVerbose) {
+      for (n = 0; n < MAX_WORD_LEN - 2; n++) {
+        if (word_len_counts[n])
+          printf("  %2d %2d\n",word_len_counts[n],n+2);
       }
 
-      if (width != save_width) {
-        printf("length of line %d doesn't conform\n",height);
-        free(in_buf);
-        close(fhndl);
-        return 5;
-      }
+      putchar(0x0a);
     }
+
+    free(in_buf);
   }
 
-  close(fhndl);
-
-  *in_buf_pt = in_buf;
-  *width_pt = width;
-  *height_pt = height;
+  fclose(fptr0);
 
   return 0;
 }
 
-void compress(char *in_buf,int width,int height)
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+{
+  int chara;
+  int local_line_len;
+
+  local_line_len = 0;
+
+  for ( ; ; ) {
+    chara = fgetc(fptr);
+
+    if (feof(fptr))
+      break;
+
+    if (chara == '\n')
+      break;
+
+    if (local_line_len < maxllen - 1)
+      line[local_line_len++] = (char)chara;
+  }
+
+  line[local_line_len] = 0;
+  *line_len = local_line_len;
+}
+
+static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words)
 {
   int m;
   int n;
-  int p;
-  int area;
-  int dbg;
+  int num_words;
+  int offset;
+  bool bInWord;
+  int word_len;
+  int num_letters;
+  bool bPrinted;
 
-  area = width * height;
+  bPrinted = false;
 
-  m = width;
-  n = width + 1;
+  num_words = 0;
+  num_letters = 0;
 
-  for (p = 0; p < (height - 1) * width; p++) {
-    in_buf[m++] = in_buf[n++];
+  for (m = 0; m < height; m++) {
+    offset = m * width;
+    bInWord = false;
 
-    if (in_buf[n] == LINEFEED)
-      n++;
+    for (n = 0; n < width; n++) {
+      if (in_buf[offset + n] != '.') {
+        if (!bInWord) {
+          bInWord = true;
+          word_len = 0;
+        }
+
+        word[word_len++] = in_buf[offset + n];
+      }
+      else if (bInWord) {
+        if (word_len > 1) {
+          word[word_len] = 0;
+
+          if (!theme_words || is_a_theme_word(word)) {
+            num_words++;
+            num_letters += word_len;
+            word_len_counts[word_len - 2]++;
+
+            if (!bPrinted) {
+              printf("  Across\n\n");
+              bPrinted = true;
+            }
+
+            if (!bVerbose)
+              printf("    %s\n",word);
+            else
+              printf("    %s (%d)\n",word,word_len);
+          }
+        }
+
+        bInWord = false;
+      }
+    }
+
+    if (bInWord) {
+      if (word_len > 1) {
+        word[word_len] = 0;
+
+        if (!theme_words || is_a_theme_word(word)) {
+          num_words++;
+          num_letters += word_len;
+          word_len_counts[word_len - 2]++;
+
+          if (!bPrinted) {
+            printf("  Across\n\n");
+            bPrinted = true;
+          }
+
+          if (!bVerbose)
+            printf("    %s\n",word);
+          else
+            printf("    %s (%d)\n",word,word_len);
+        }
+      }
+    }
   }
 
-  if (m == area)
-    dbg = 1;
+  if (bPrinted) {
+    putchar(0x0a);
+
+    if (bVerbose && !theme_words)
+      printf("    num_words = %d, num_letters = %d\n\n",num_words,num_letters);
+  }
+
+  *num_letters_pt = num_letters;
+
+  return num_words;
 }
+
+static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words)
+{
+  int m;
+  int n;
+  int num_words;
+  bool bInWord;
+  int word_len;
+  int num_letters;
+  bool bPrinted;
+
+  bPrinted = false;
+
+  num_words = 0;
+  num_letters = 0;
+
+  for (m = 0; m < width; m++) {
+    bInWord = false;
+
+    for (n = 0; n < height; n++) {
+      if (in_buf[m + n * width] != '.') {
+        if (!bInWord) {
+          bInWord = true;
+          word_len = 0;
+        }
+
+        word[word_len++] = in_buf[m + n * width];
+      }
+      else if (bInWord) {
+        if (word_len > 1) {
+          word[word_len] = 0;
+
+          if (!theme_words || is_a_theme_word(word)) {
+            num_words++;
+            num_letters += word_len;
+            word_len_counts[word_len - 2]++;
+
+            if (!bPrinted) {
+              printf("  Down\n\n");
+              bPrinted = true;
+            }
+
+            if (!bVerbose)
+              printf("    %s\n",word);
+            else
+              printf("    %s (%d)\n",word,word_len);
+          }
+        }
+
+        bInWord = false;
+      }
+    }
+
+    if (bInWord) {
+      if (word_len > 1) {
+        word[word_len] = 0;
+
+        if (!theme_words || is_a_theme_word(word)) {
+          num_words++;
+          num_letters += word_len;
+          word_len_counts[word_len - 2]++;
+
+          if (!bPrinted) {
+            printf("  Down\n\n");
+            bPrinted = true;
+          }
+
+          if (!bVerbose)
+            printf("    %s\n",word);
+          else
+            printf("    %s (%d)\n",word,word_len);
+        }
+      }
+    }
+  }
+
+  if (bPrinted) {
+    putchar(0x0a);
+
+    if (bVerbose && !theme_words)
+      printf("    num_words = %d, num_letters = %d\n",num_words,num_letters);
+  }
+
+  *num_letters_pt = num_letters;
+
+  return num_words;
+}
+
+static bool is_a_theme_word(char *word)
+{
+  int n;
+
+  // theme words are all in caps
+
+  for (n = 0; (word[n]); n++) {
+    if ((word[n] < 'A') || (word[n] > 'Z'))
+      return false;
+  }
+
+  // theme words must be at least three letters
+
+  if (n < 3)
+    return false;
+
+  return true;
+}
+sa
