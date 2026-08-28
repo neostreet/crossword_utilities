@@ -119,6 +119,10 @@ void compress(char *in_buf,int width,int height)
   int m;
   int n;
   int p;
+  int area;
+  int dbg;
+
+  area = width * height;
 
   m = width;
   n = width + 1;
@@ -129,4 +133,7 @@ void compress(char *in_buf,int width,int height)
     if (in_buf[n] == LINEFEED)
       n++;
   }
+
+  if (m == area)
+    dbg = 1;
 }
