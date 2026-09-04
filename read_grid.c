@@ -12,6 +12,7 @@
 #define O_BINARY 0
 #endif
 #endif
+#include "str_list.h"
 
 #define LINEFEED 0x0a
 
@@ -22,6 +23,7 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
+extern char word[];
 extern int word_len_counts[];
 
 int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper)
@@ -136,4 +138,86 @@ void compress(char *in_buf,int width,int height)
 
   if (m == area)
     dbg = 1;
+}
+
+void do_across(char *in_buf,int width,int height,struct info_list *words)
+{
+  int m;
+  int n;
+  int offset;
+  bool bInWord;
+  int word_len;
+  struct info_list_elem *work_elem;
+  int ix;
+
+  for (m = 0; m < height; m++) {
+    offset = m * width;
+    bInWord = false;
+
+    for (n = 0; n < width; n++) {
+      if (in_buf[offset + n] != '.') {
+        if (!bInWord) {
+          bInWord = true;
+          word_len = 0;
+        }
+
+        word[word_len++] = in_buf[offset + n];
+      }
+      else if (bInWord) {
+        if (word_len > 1) {
+          word[word_len] = 0;
+          add_info_list_elem(words,word,1,word_len,0,0,false);
+        }
+
+        bInWord = false;
+      }
+    }
+
+    if (bInWord) {
+      if (word_len > 1) {
+        word[word_len] = 0;
+        add_info_list_elem(words,word,1,word_len,0,0,false);
+      }
+    }
+  }
+}
+
+void do_down(char *in_buf,int width,int height,struct info_list *words)
+{
+  int m;
+  int n;
+  bool bInWord;
+  int word_len;
+  struct info_list_elem *work_elem;
+  int ix;
+
+  for (m = 0; m < width; m++) {
+    bInWord = false;
+
+    for (n = 0; n < height; n++) {
+      if (in_buf[m + n * width] != '.') {
+        if (!bInWord) {
+          bInWord = true;
+          word_len = 0;
+        }
+
+        word[word_len++] = in_buf[m + n * width];
+      }
+      else if (bInWord) {
+        if (word_len > 1) {
+          word[word_len] = 0;
+          add_info_list_elem(words,word,1,word_len,0,0,false);
+        }
+
+        bInWord = false;
+      }
+    }
+
+    if (bInWord) {
+      if (word_len > 1) {
+        word[word_len] = 0;
+        add_info_list_elem(words,word,1,word_len,0,0,false);
+      }
+    }
+  }
 }
