@@ -12,6 +12,7 @@
 #define O_BINARY 0
 #endif
 #endif
+#include "str_list.h"
 
 #define LINEFEED 0x0a
 
@@ -27,14 +28,14 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
-static char word[MAX_WORD_LEN+1];
+char word[MAX_WORD_LEN+1];
 int word_len_counts[MAX_WORD_LEN-2];
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
 void compress(char *in_buf,int width,int height);
-static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
-static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words);
+void do_across(char *in_buf,int width,int height,struct info_list *words);
+void do_down(char *in_buf,int width,int height,struct info_list *words);
 static bool is_a_theme_word(char *word);
 
 int main(int argc,char **argv)
@@ -44,6 +45,9 @@ int main(int argc,char **argv)
   bool bVerbose;
   int lower;
   int upper;
+  struct info_list across_words;
+  struct info_list down_words;
+  struct info_list_elem *work_elem;
   int theme_words;
   FILE *fptr0;
   int filename_len;
@@ -51,10 +55,13 @@ int main(int argc,char **argv)
   char *in_buf;
   int width;
   int height;
+  int num_across_words;
+  int num_down_words;
   int total_words;
   int num_across_letters;
   int num_down_letters;
   int total_letters;
+  bool bPrinted;
 
   if ((argc < 2) || (argc > 6)) {
     printf(usage);
@@ -111,12 +118,77 @@ int main(int argc,char **argv)
 
     compress(in_buf,width,height);
 
-    total_words = do_across(in_buf,width,height,bVerbose,&num_across_letters,theme_words);
-    total_words += do_down(in_buf,width,height,bVerbose,&num_down_letters,theme_words);
+    across_words.num_elems = 0;
+    down_words.num_elems = 0;
+
+    do_across(in_buf,width,height,&across_words);
+    do_down(in_buf,width,height,&down_words);
+
+    bPrinted = false;
+    num_across_words = 0;
+    num_across_letters = 0;
+    work_elem = across_words.first_elem;
+
+    for (n = 0; n < across_words.num_elems; n++) {
+      if (!theme_words || is_a_theme_word(work_elem->str)) {
+        if (!bPrinted) {
+          printf("  Across\n");
+          bPrinted = true;
+        }
+
+        num_across_words++;
+        num_across_letters += work_elem->int2;
+        word_len_counts[work_elem->int2 - 2]++;
+
+        if (!bVerbose)
+          printf("    %s\n",work_elem->str);
+        else
+          printf("    %s (%d)\n",work_elem->str,work_elem->int2);
+      }
+
+      work_elem = work_elem->next_elem;
+    }
+
+    if (bVerbose && !theme_words)
+      printf("    num_words = %d, num_letters = %d\n",num_across_words,num_across_letters);
+
+    free_info_list(&across_words);
+
+    bPrinted = false;
+    num_down_words = 0;
+    num_down_letters = 0;
+    work_elem = down_words.first_elem;
+
+    for (n = 0; n < down_words.num_elems; n++) {
+      if (!theme_words || is_a_theme_word(work_elem->str)) {
+        if (!bPrinted) {
+          printf("  Down\n");
+          bPrinted = true;
+        }
+
+        num_down_words++;
+        num_down_letters += work_elem->int2;
+        word_len_counts[work_elem->int2 - 2]++;
+
+        if (!bVerbose)
+          printf("    %s\n",work_elem->str);
+        else
+          printf("    %s (%d)\n",work_elem->str,work_elem->int2);
+      }
+
+      work_elem = work_elem->next_elem;
+    }
+
+    if (bVerbose && !theme_words)
+      printf("    num_words = %d, num_letters = %d\n",num_down_words,num_down_letters);
+
+    free_info_list(&down_words);
+
+    total_words = num_across_words + num_down_words;
     total_letters = num_across_letters + num_down_letters;
 
     if (bVerbose)
-      printf("\n  total_words = %d, total_letters = %d\n\n",total_words,total_letters);
+      printf("\n  total_words = %d, total_letters = %d\n",total_words,total_letters);
 
     if (bVerbose) {
       for (n = 0; n < MAX_WORD_LEN - 2; n++) {
@@ -157,182 +229,6 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
-}
-
-static int do_across(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words)
-{
-  int m;
-  int n;
-  int num_words;
-  int offset;
-  bool bInWord;
-  int word_len;
-  int num_letters;
-  bool bPrinted;
-
-  bPrinted = false;
-
-  num_words = 0;
-  num_letters = 0;
-
-  for (m = 0; m < height; m++) {
-    offset = m * width;
-    bInWord = false;
-
-    for (n = 0; n < width; n++) {
-      if (in_buf[offset + n] != '.') {
-        if (!bInWord) {
-          bInWord = true;
-          word_len = 0;
-        }
-
-        word[word_len++] = in_buf[offset + n];
-      }
-      else if (bInWord) {
-        if (word_len > 1) {
-          word[word_len] = 0;
-
-          if (!theme_words || is_a_theme_word(word)) {
-            num_words++;
-            num_letters += word_len;
-            word_len_counts[word_len - 2]++;
-
-            if (!bPrinted) {
-              printf("  Across\n\n");
-              bPrinted = true;
-            }
-
-            if (!bVerbose)
-              printf("    %s\n",word);
-            else
-              printf("    %s (%d)\n",word,word_len);
-          }
-        }
-
-        bInWord = false;
-      }
-    }
-
-    if (bInWord) {
-      if (word_len > 1) {
-        word[word_len] = 0;
-
-        if (!theme_words || is_a_theme_word(word)) {
-          num_words++;
-          num_letters += word_len;
-          word_len_counts[word_len - 2]++;
-
-          if (!bPrinted) {
-            printf("  Across\n\n");
-            bPrinted = true;
-          }
-
-          if (!bVerbose)
-            printf("    %s\n",word);
-          else
-            printf("    %s (%d)\n",word,word_len);
-        }
-      }
-    }
-  }
-
-  if (bPrinted) {
-    putchar(0x0a);
-
-    if (bVerbose && !theme_words)
-      printf("    num_words = %d, num_letters = %d\n\n",num_words,num_letters);
-  }
-
-  *num_letters_pt = num_letters;
-
-  return num_words;
-}
-
-static int do_down(char *in_buf,int width,int height,bool bVerbose,int *num_letters_pt,int theme_words)
-{
-  int m;
-  int n;
-  int num_words;
-  bool bInWord;
-  int word_len;
-  int num_letters;
-  bool bPrinted;
-
-  bPrinted = false;
-
-  num_words = 0;
-  num_letters = 0;
-
-  for (m = 0; m < width; m++) {
-    bInWord = false;
-
-    for (n = 0; n < height; n++) {
-      if (in_buf[m + n * width] != '.') {
-        if (!bInWord) {
-          bInWord = true;
-          word_len = 0;
-        }
-
-        word[word_len++] = in_buf[m + n * width];
-      }
-      else if (bInWord) {
-        if (word_len > 1) {
-          word[word_len] = 0;
-
-          if (!theme_words || is_a_theme_word(word)) {
-            num_words++;
-            num_letters += word_len;
-            word_len_counts[word_len - 2]++;
-
-            if (!bPrinted) {
-              printf("  Down\n\n");
-              bPrinted = true;
-            }
-
-            if (!bVerbose)
-              printf("    %s\n",word);
-            else
-              printf("    %s (%d)\n",word,word_len);
-          }
-        }
-
-        bInWord = false;
-      }
-    }
-
-    if (bInWord) {
-      if (word_len > 1) {
-        word[word_len] = 0;
-
-        if (!theme_words || is_a_theme_word(word)) {
-          num_words++;
-          num_letters += word_len;
-          word_len_counts[word_len - 2]++;
-
-          if (!bPrinted) {
-            printf("  Down\n\n");
-            bPrinted = true;
-          }
-
-          if (!bVerbose)
-            printf("    %s\n",word);
-          else
-            printf("    %s (%d)\n",word,word_len);
-        }
-      }
-    }
-  }
-
-  if (bPrinted) {
-    putchar(0x0a);
-
-    if (bVerbose && !theme_words)
-      printf("    num_words = %d, num_letters = %d\n",num_words,num_letters);
-  }
-
-  *num_letters_pt = num_letters;
-
-  return num_words;
 }
 
 static bool is_a_theme_word(char *word)
