@@ -26,7 +26,7 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
-static char word[MAX_WORD_LEN+1];
+char word[MAX_WORD_LEN+1];
 int word_len_counts[MAX_WORD_LEN-2];
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
