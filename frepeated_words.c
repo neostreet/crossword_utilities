@@ -28,14 +28,14 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
-static char word[MAX_WORD_LEN+1];
+char word[MAX_WORD_LEN+1];
 int word_len_counts[MAX_WORD_LEN-2];
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
 void compress(char *in_buf,int width,int height);
-static void do_across(char *in_buf,int width,int height,struct info_list *words);
-static void do_down(char *in_buf,int width,int height,struct info_list *words);
+void do_across(char *in_buf,int width,int height,struct info_list *words);
+void do_down(char *in_buf,int width,int height,struct info_list *words);
 
 int main(int argc,char **argv)
 {
@@ -148,114 +148,4 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
-}
-
-static void do_across(char *in_buf,int width,int height,struct info_list *words)
-{
-  int m;
-  int n;
-  int offset;
-  bool bInWord;
-  int word_len;
-  struct info_list_elem *work_elem;
-  int ix;
-
-  for (m = 0; m < height; m++) {
-    offset = m * width;
-    bInWord = false;
-
-    for (n = 0; n < width; n++) {
-      if (in_buf[offset + n] != '.') {
-        if (!bInWord) {
-          bInWord = true;
-          word_len = 0;
-        }
-
-        word[word_len++] = in_buf[offset + n];
-      }
-      else if (bInWord) {
-        if (word_len > 1) {
-          word[word_len] = 0;
-
-          if (member_of_info_list(words,word,&ix)) {
-            if (get_info_list_elem(words,ix,&work_elem)) {
-              work_elem->int1++;
-            }
-          }
-          else
-            add_info_list_elem(words,word,1,0,0,0,true);
-        }
-
-        bInWord = false;
-      }
-    }
-
-    if (bInWord) {
-      if (word_len > 1) {
-        word[word_len] = 0;
-
-        if (member_of_info_list(words,word,&ix)) {
-          if (get_info_list_elem(words,ix,&work_elem)) {
-            work_elem->int1++;
-          }
-        }
-        else
-          add_info_list_elem(words,word,1,0,0,0,true);
-      }
-    }
-  }
-}
-
-static void do_down(char *in_buf,int width,int height,struct info_list *words)
-{
-  int m;
-  int n;
-  bool bInWord;
-  int word_len;
-  struct info_list_elem *work_elem;
-  int ix;
-
-  for (m = 0; m < width; m++) {
-    bInWord = false;
-
-    for (n = 0; n < height; n++) {
-      if (in_buf[m + n * width] != '.') {
-        if (!bInWord) {
-          bInWord = true;
-          word_len = 0;
-        }
-
-        word[word_len++] = in_buf[m + n * width];
-      }
-      else if (bInWord) {
-        if (word_len > 1) {
-          word[word_len] = 0;
-
-          if (member_of_info_list(words,word,&ix)) {
-            if (get_info_list_elem(words,ix,&work_elem)) {
-              work_elem->int1++;
-            }
-          }
-          else
-            add_info_list_elem(words,word,1,0,0,0,true);
-        }
-
-        bInWord = false;
-      }
-    }
-
-    if (bInWord) {
-      if (word_len > 1) {
-        word[word_len] = 0;
-
-        if (member_of_info_list(words,word,&ix)) {
-          if (get_info_list_elem(words,ix,&work_elem)) {
-            work_elem->int1++;
-          }
-        }
-        else
-          add_info_list_elem(words,word,1,0,0,0,true);
-      }
-    }
-  }
 }
