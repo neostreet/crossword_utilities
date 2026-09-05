@@ -23,6 +23,7 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
+char word[MAX_WORD_LEN+1];
 int word_len_counts[MAX_WORD_LEN-2];
 
 static int dbg_p;
