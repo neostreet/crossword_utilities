@@ -28,7 +28,7 @@ static char malloc_failed[] = "malloc of %d bytes failed\n";
 static char read_failed[] = "%s: read of %d bytes failed\n";
 
 #define MAX_WORD_LEN 20
-static char word[MAX_WORD_LEN+1];
+char word[MAX_WORD_LEN+1];
 int word_len_counts[MAX_WORD_LEN-2];
 
 static void build_outfilename(char *filename,char *outfilename,int terse_mode,bool bVerbose,int exact_word_len,int lower,int upper);
