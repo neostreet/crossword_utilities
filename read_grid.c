@@ -140,7 +140,7 @@ void compress(char *in_buf,int width,int height)
     dbg = 1;
 }
 
-void do_across(char *in_buf,int width,int height,struct info_list *words)
+void do_across(char *in_buf,int width,int height,struct info_list *words,int bNoDuplicates)
 {
   int m;
   int n;
@@ -166,7 +166,15 @@ void do_across(char *in_buf,int width,int height,struct info_list *words)
       else if (bInWord) {
         if (word_len > 1) {
           word[word_len] = 0;
-          add_info_list_elem(words,word,1,word_len,0,0,false);
+
+          if (!bNoDuplicates)
+            add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
+          else if (member_of_info_list(words,word,&ix)) {
+            if (get_info_list_elem(words,ix,&work_elem))
+              work_elem->int1 += 1;
+          }
+          else
+            add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
         }
 
         bInWord = false;
@@ -176,13 +184,21 @@ void do_across(char *in_buf,int width,int height,struct info_list *words)
     if (bInWord) {
       if (word_len > 1) {
         word[word_len] = 0;
-        add_info_list_elem(words,word,1,word_len,0,0,false);
+
+        if (!bNoDuplicates)
+          add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
+        else if (member_of_info_list(words,word,&ix)) {
+          if (get_info_list_elem(words,ix,&work_elem))
+            work_elem->int1 += 1;
+        }
+        else
+          add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
       }
     }
   }
 }
 
-void do_down(char *in_buf,int width,int height,struct info_list *words)
+void do_down(char *in_buf,int width,int height,struct info_list *words,int bNoDuplicates)
 {
   int m;
   int n;
@@ -206,7 +222,15 @@ void do_down(char *in_buf,int width,int height,struct info_list *words)
       else if (bInWord) {
         if (word_len > 1) {
           word[word_len] = 0;
-          add_info_list_elem(words,word,1,word_len,0,0,false);
+
+          if (!bNoDuplicates)
+            add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
+          else if (member_of_info_list(words,word,&ix)) {
+            if (get_info_list_elem(words,ix,&work_elem))
+              work_elem->int1 += 1;
+          }
+          else
+            add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
         }
 
         bInWord = false;
@@ -216,7 +240,15 @@ void do_down(char *in_buf,int width,int height,struct info_list *words)
     if (bInWord) {
       if (word_len > 1) {
         word[word_len] = 0;
-        add_info_list_elem(words,word,1,word_len,0,0,false);
+
+        if (!bNoDuplicates)
+          add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
+        else if (member_of_info_list(words,word,&ix)) {
+          if (get_info_list_elem(words,ix,&work_elem))
+            work_elem->int1 += 1;
+        }
+        else
+          add_info_list_elem(words,word,1,word_len,0,0,bNoDuplicates);
       }
     }
   }
