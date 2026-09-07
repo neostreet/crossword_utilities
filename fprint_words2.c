@@ -34,8 +34,8 @@ int word_len_counts[MAX_WORD_LEN-2];
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
 void compress(char *in_buf,int width,int height);
-void do_across(char *in_buf,int width,int height,struct info_list *words);
-void do_down(char *in_buf,int width,int height,struct info_list *words);
+void do_across(char *in_buf,int width,int height,struct info_list *words,int bNoDuplicates);
+void do_down(char *in_buf,int width,int height,struct info_list *words,int bNoDuplicates);
 static bool is_a_theme_word(char *word);
 
 int main(int argc,char **argv)
@@ -121,8 +121,8 @@ int main(int argc,char **argv)
     across_words.num_elems = 0;
     down_words.num_elems = 0;
 
-    do_across(in_buf,width,height,&across_words);
-    do_down(in_buf,width,height,&down_words);
+    do_across(in_buf,width,height,&across_words,false);
+    do_down(in_buf,width,height,&down_words,false);
 
     bPrinted = false;
     num_across_words = 0;
