@@ -34,8 +34,8 @@ int word_len_counts[MAX_WORD_LEN-2];
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int lower,int upper);
 void compress(char *in_buf,int width,int height);
-void do_across(char *in_buf,int width,int height,struct info_list *words);
-void do_down(char *in_buf,int width,int height,struct info_list *words);
+void do_across(char *in_buf,int width,int height,struct info_list *words,int bNoDuplicates);
+void do_down(char *in_buf,int width,int height,struct info_list *words,int bNoDuplicates);
 
 int main(int argc,char **argv)
 {
@@ -93,8 +93,8 @@ int main(int argc,char **argv)
 
     words.num_elems = 0;
 
-    do_across(in_buf,width,height,&words);
-    do_down(in_buf,width,height,&words);
+    do_across(in_buf,width,height,&words,true);
+    do_down(in_buf,width,height,&words,true);
 
     free(in_buf);
 
