@@ -20,7 +20,8 @@
 static char filename[MAX_FILENAME_LEN];
 static char outfilename[MAX_FILENAME_LEN];
 
-static char usage[] = "usage: fprint_words2 (-verbose) (-lower) (-upper) (-theme_words) filename\n";
+static char usage[] =
+"usage: fprint_words2 (-verbose) (-lower) (-upper) (-theme_words) (-dimensions) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char couldnt_get_status[] = "couldn't get status of %s\n";
 
@@ -49,6 +50,7 @@ int main(int argc,char **argv)
   struct info_list down_words;
   struct info_list_elem *work_elem;
   int theme_words;
+  bool bDimensions;
   FILE *fptr0;
   int filename_len;
   int retval;
@@ -63,7 +65,7 @@ int main(int argc,char **argv)
   int total_letters;
   bool bPrinted;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -72,6 +74,7 @@ int main(int argc,char **argv)
   lower = 0;
   upper = 0;
   theme_words = 0;
+  bDimensions = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -82,6 +85,8 @@ int main(int argc,char **argv)
       upper = 1;
     else if (!strcmp(argv[curr_arg],"-theme_words"))
       theme_words = 1;
+    else if (!strcmp(argv[curr_arg],"-dimensions"))
+      bDimensions = true;
     else
       break;
   }
@@ -115,6 +120,9 @@ int main(int argc,char **argv)
       printf("read_grid(() failed: %d\n",retval);
       continue;
     }
+
+    if (bDimensions)
+      printf("  %d X %d\n",width,height);
 
     compress(in_buf,width,height);
 
