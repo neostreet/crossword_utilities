@@ -25,6 +25,8 @@ struct filename_info {
   int blocks;
   int puzzle_size;
   double block_pct;
+  int max_contig_blocks_across;
+  int max_contig_blocks_down;
 };
 
 static struct filename_info filename_inf[MAX_FILES];
@@ -50,6 +52,7 @@ int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int l
 void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
 static int elem_compare(const void *elem1,const void *elem2);
+static void count_contig_blocks(char *in_buf,int width,int height,int puzzle_size,int *max_contig_blocks_across_pt,int *max_contig_blocks_down_pt);
 
 int main(int argc,char **argv)
 {
@@ -119,11 +122,13 @@ int main(int argc,char **argv)
     qsort(ixs,num_files,sizeof (int),elem_compare);
 
   for (n = 0; n < num_files; n++) {
-    printf("%6.2lf%% blocks (%d %d) %s\n",
+    printf("%6.2lf%% blocks (%d %d) %s %d %d\n",
       filename_inf[ixs[n]].block_pct,
       filename_inf[ixs[n]].blocks,
       filename_inf[ixs[n]].puzzle_size,
-      filename_inf[ixs[n]].filename);
+      filename_inf[ixs[n]].filename,
+      filename_inf[ixs[n]].max_contig_blocks_across,
+      filename_inf[ixs[n]].max_contig_blocks_down);
   }
 
   return 0;
@@ -165,6 +170,8 @@ static int grid_info(char *filename)
   int puzzle_size;
   int blocks;
   double block_pct;
+  int max_contig_blocks_across;
+  int max_contig_blocks_down;
 
   retval = read_grid(filename,&in_buf,&width,&height,0,0);
 
@@ -182,6 +189,10 @@ static int grid_info(char *filename)
   filename_inf[num_files].blocks = blocks;
   filename_inf[num_files].puzzle_size = puzzle_size;
   filename_inf[num_files].block_pct = (double)blocks / (double)puzzle_size * (double)100;
+
+  count_contig_blocks(in_buf,width,height,puzzle_size,&max_contig_blocks_across,&max_contig_blocks_down);
+  filename_inf[num_files].max_contig_blocks_across = max_contig_blocks_across;
+  filename_inf[num_files].max_contig_blocks_down = max_contig_blocks_down;
 
   free(in_buf);
 
@@ -223,4 +234,57 @@ static int elem_compare(const void *elem1,const void *elem2)
     return -1;
   else
     return 0;
+}
+
+static void count_contig_blocks(char *in_buf,int width,int height,int puzzle_size,int *max_contig_blocks_across_pt,int *max_contig_blocks_down_pt)
+{
+  int m;
+  int n;
+  int contig_blocks;
+  int max_contig_blocks;
+  int offset;
+
+  contig_blocks =  0;
+  max_contig_blocks = 0;
+
+  for (m = 0; m < height; m++) {
+    offset = m * width;
+
+    for (n = 0; n < width; n++) {
+      if (in_buf[offset + n] == '.') {
+        contig_blocks++;
+      }
+      else {
+        if (contig_blocks > 0) {
+          if (contig_blocks > max_contig_blocks)
+            max_contig_blocks = contig_blocks;
+
+          contig_blocks = 0;
+        }
+      }
+    }
+  }
+
+  *max_contig_blocks_across_pt = max_contig_blocks;
+
+  contig_blocks =  0;
+  max_contig_blocks = 0;
+
+  for (n = 0; n < width; n++) {
+    for (m = 0; m < height; m++) {
+      if (in_buf[n + m * width] == '.') {
+        contig_blocks++;
+      }
+      else {
+        if (contig_blocks > 0) {
+          if (contig_blocks > max_contig_blocks)
+            max_contig_blocks = contig_blocks;
+
+          contig_blocks = 0;
+        }
+      }
+    }
+  }
+
+  *max_contig_blocks_down_pt = max_contig_blocks;
 }
