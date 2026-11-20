@@ -52,7 +52,7 @@ int read_grid(char *filename,char **in_buf_pt,int *width_pt,int *height_pt,int l
 void compress(char *in_buf,int width,int height);
 static int count_blocks(char *in_buf,int puzzle_size);
 static int elem_compare(const void *elem1,const void *elem2);
-static void count_contig_blocks(char *in_buf,int width,int height,int puzzle_size,int *max_contig_blocks_across_pt,int *max_contig_blocks_down_pt);
+static void count_contig_blocks(char *in_buf,int width,int height,int *max_contig_blocks_across_pt,int *max_contig_blocks_down_pt);
 
 int main(int argc,char **argv)
 {
@@ -190,7 +190,7 @@ static int grid_info(char *filename)
   filename_inf[num_files].puzzle_size = puzzle_size;
   filename_inf[num_files].block_pct = (double)blocks / (double)puzzle_size * (double)100;
 
-  count_contig_blocks(in_buf,width,height,puzzle_size,&max_contig_blocks_across,&max_contig_blocks_down);
+  count_contig_blocks(in_buf,width,height,&max_contig_blocks_across,&max_contig_blocks_down);
   filename_inf[num_files].max_contig_blocks_across = max_contig_blocks_across;
   filename_inf[num_files].max_contig_blocks_down = max_contig_blocks_down;
 
@@ -236,7 +236,7 @@ static int elem_compare(const void *elem1,const void *elem2)
     return 0;
 }
 
-static void count_contig_blocks(char *in_buf,int width,int height,int puzzle_size,int *max_contig_blocks_across_pt,int *max_contig_blocks_down_pt)
+static void count_contig_blocks(char *in_buf,int width,int height,int *max_contig_blocks_across_pt,int *max_contig_blocks_down_pt)
 {
   int m;
   int n;
