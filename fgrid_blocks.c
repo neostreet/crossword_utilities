@@ -244,16 +244,15 @@ static void count_contig_blocks(char *in_buf,int width,int height,int *max_conti
   int max_contig_blocks;
   int offset;
 
-  contig_blocks =  0;
   max_contig_blocks = 0;
 
   for (m = 0; m < height; m++) {
+    contig_blocks =  0;
     offset = m * width;
 
     for (n = 0; n < width; n++) {
-      if (in_buf[offset + n] == '.') {
+      if (in_buf[offset + n] == '.')
         contig_blocks++;
-      }
       else {
         if (contig_blocks > 0) {
           if (contig_blocks > max_contig_blocks)
@@ -267,14 +266,14 @@ static void count_contig_blocks(char *in_buf,int width,int height,int *max_conti
 
   *max_contig_blocks_across_pt = max_contig_blocks;
 
-  contig_blocks =  0;
-  max_contig_blocks = 0;
+  max_contig_blocks =  0;
 
   for (n = 0; n < width; n++) {
+    contig_blocks =  0;
+
     for (m = 0; m < height; m++) {
-      if (in_buf[n + m * width] == '.') {
+      if (in_buf[n + m * width] == '.')
         contig_blocks++;
-      }
       else {
         if (contig_blocks > 0) {
           if (contig_blocks > max_contig_blocks)
